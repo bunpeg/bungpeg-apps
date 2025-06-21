@@ -1,0 +1,24 @@
+---
+title: Extract audio
+---
+
+Extract audio from a video file.
+
+```http
+POST /extract-audio
+Content-Type: application/json
+
+{
+  "fileId": "string",
+  "audioFormat": "mp3" | "m4a" | "aac" | "flac" | "wav" | "opus"
+}
+```
+
+### Technical Details:
+- Generates a new file
+- Codec selection based on format:
+  - MP3: libmp3lame with quality 2
+  - AAC/M4A: AAC codec at 192kbps
+  - WAV: PCM 16-bit
+  - FLAC: Native FLAC codec
+  - Opus: libopus at 128kbps

@@ -1,0 +1,20 @@
+---
+title: Transcode
+---
+
+Convert a video to a different format.
+
+```http
+POST /transcode
+Content-Type: application/json
+
+{
+  "fileId": "string",
+  "format": "mp4" | "mkv" | "webm" | "mov" | "avi"
+}
+```
+
+### Technical Details:
+- Swaps the files
+- Uses FFmpeg's copy codec for faster transcoding
+- Preserves original video and audio quality

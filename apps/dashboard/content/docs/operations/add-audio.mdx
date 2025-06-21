@@ -1,0 +1,26 @@
+---
+title: Add audio
+---
+
+Add an audio track to a video. This one can be tricky if both video and audio don't have the same length.
+
+```http
+POST /add-audio
+Content-Type: application/json
+
+{
+  "videoFileId": "string",
+  "audioFileId": "string",
+  "outputFormat": "mp4" | "mkv" | "webm" | "mov" | "avi"
+}
+```
+
+### Technical Details:
+- Swaps the video file
+- Smart codec selection based on output format:
+  - MP4/MOV: AAC (192kbps) or copy if compatible
+  - WebM: Opus (128kbps) or copy if compatible
+  - MKV: Supports multiple codecs, defaults to AAC
+  - AVI: MP3 or WAV
+- Uses `-shortest` flag to match video duration
+- Preserves video quality with `-c:v copy`

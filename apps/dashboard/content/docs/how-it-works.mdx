@@ -1,0 +1,30 @@
+---
+title: How it works
+description: A breakdown of the service
+---
+
+### The basics
+Right now the service has no authentication of any kind (it's a priority for me), but besides that, it works
+pretty similar to other services you might have encountered. You can upload a file, up to 500MB for now, for which
+you will get a `file_id` in the form of a nanoid.
+
+After this you can call the operation endpoints to schedule operations to be performed on said file.
+It currently has a limited set of operations, but I'm working to expand it.
+You can also chain operations by using the `/chain` endpoint.
+
+### Metadata
+Regarding file metadata, it currently gets generated asynchronously after upload, so if you need it right after
+you have two options, you can poll the `/files/{file_id}` endpoint or call the `/meta/{file_id}` and get it directly.
+The `/meta/{file_id}` will not store it in DB though.
+
+### How files are processed
+Each operation is stored in DB as a task, and tasks are acted on sequentially. If a task for a file fails,
+all the pending tasks left will be marked as unreachable to avoid unexpected results, as many tasks use a
+swap model for the files. The queue and operations will only swap the files on S3 if the operation and the cleanup
+tasks after complete successfully. Ideally the operation endpoints will fail if the operation can't be performed, if not,
+the tasks should have an error message.
+
+All operations currently have a timeout of 15 minutes, I used this as I have no idea really of how long operations
+could take, but wanted to make sure there was a limit, it can of course change in the future once I have more data.
+
+There is a `/status/{file_id}` endpoint that you can use to check when the file has been done processing.

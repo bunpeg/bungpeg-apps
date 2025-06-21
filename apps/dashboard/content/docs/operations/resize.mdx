@@ -1,0 +1,24 @@
+---
+title: Resize
+---
+
+Resize a video to different a size, even though the numbers used are the same as the resolution
+this does not improve the resolution, so scaling a small res video will result in a bigger, pixelated video.
+
+```http
+POST /resize-video
+Content-Type: application/json
+
+{
+  "fileId": "string",
+  "width": number,
+  "height": number,
+  "outputFormat": "mp4" | "mkv" | "webm" | "mov" | "avi"
+}
+```
+
+### Technical Details:
+- Swaps the files
+- Uses FFmpeg's scale filter
+- Maintains aspect ratio
+- Output is encoded with libx264 codec

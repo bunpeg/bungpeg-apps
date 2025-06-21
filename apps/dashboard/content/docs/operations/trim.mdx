@@ -1,0 +1,23 @@
+---
+title: Trim
+---
+
+Trim a segment from a video.
+
+```http
+POST /trim
+Content-Type: application/json
+
+{
+  "fileId": "string",
+  "start": number,
+  "duration": number,
+  "outputFormat": "mp4" | "mkv" | "webm" | "mov" | "avi"
+}
+```
+
+### Technical Details:
+- Swaps the files
+- Uses FFmpeg's copy codec for fast trimming
+- Precise frame-accurate trimming
+- Preserves original quality

@@ -1,0 +1,23 @@
+---
+title: Trim end
+---
+
+Cut a segment from the end of a video. I'm not sure yet if this is very helpful, but it seemed so to me.
+I know this operation can be replicated with the `/trim`, but it seemed a bit harder that way.
+
+```http
+POST /trim-end
+Content-Type: application/json
+
+{
+  "fileId": "string",
+  "duration": number, // time lapse to remove
+  "outputFormat": "mp4" | "mkv" | "webm" | "mov" | "avi"
+}
+```
+
+### Technical Details:
+- Swaps the files
+- Automatically calculates total duration
+- Uses FFmpeg's copy codec
+- Throws error if resulting video would be empty

@@ -1,5 +1,6 @@
 {
   "name": "bunpeg-apps",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "build": "turbo run build",
@@ -9,12 +10,26 @@
     "check-types": "turbo run check-types"
   },
   "devDependencies": {
-    "prettier": "^3.5.3",
-    "turbo": "^2.5.4",
-    "typescript": "5.8.2"
+    "@eslint/eslintrc": "3.3.0",
+    "@next/eslint-plugin-next": "15.3.2",
+    "@stylistic/eslint-plugin": "4.2.0",
+    "@typescript-eslint/eslint-plugin": "8.32.1",
+    "@typescript-eslint/parser": "8.32.1",
+    "eslint": "9.22.0",
+    "eslint-config-next": "15.2.2",
+    "eslint-plugin-import": "2.31.0",
+    "eslint-plugin-react": "7.37.5",
+    "eslint-plugin-react-hooks": "5.2.0",
+    "patch-package": "8.0.0",
+    "turbo": "2.5.3",
+    "typescript-eslint": "8.32.1"
   },
   "engines": {
     "node": ">=18"
+  },
+  "overrides": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
   },
   "packageManager": "npm@11.2.0",
   "workspaces": [

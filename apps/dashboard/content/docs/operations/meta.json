@@ -1,0 +1,15 @@
+{
+  "title": "Operations",
+  "defaultOpen": true,
+  "pages": [
+    "transcode",
+    "resize",
+    "trim",
+    "trim-end",
+    "extract-audio",
+    "remove-audio",
+    "add-audio",
+    "merge",
+    "chain"
+  ]
+}

@@ -1,0 +1,23 @@
+---
+title: Extract  thumbnail
+---
+
+Extract a thumbnail from a video.
+
+```http
+POST /extract-thumbnail
+Content-Type: application/json
+
+{
+  "fileId": "string",
+  "timestamp": "string",
+  "imageFormat": "jpg" | "jpeg" | "png" | "webp" | "gif" | "avif" | "svg"
+}
+```
+
+### Technical Details:
+- Generates a new file
+- Uses FFmpeg's `-vframes 1` for single frame extraction
+- High quality setting with `-q:v 2`
+- Supports multiple image formats
+- Frame-accurate timestamp selection

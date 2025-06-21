@@ -1,0 +1,26 @@
+---
+title: Chain operations
+---
+
+Chain multiple operations on a file.
+
+```http
+POST /chain
+Content-Type: application/json
+
+{
+  "fileId": "string",
+  "operations": [
+    {
+      "type": "transcode" | "resize-video" | "trim" | "trim-end" | "extract-audio" | "merge-media" | "add-audio" | "remove-audio" | "extract-thumbnail",
+      // Operation-specific parameters
+    }
+  ]
+}
+```
+
+### Technical Details:
+- Operations are executed sequentially
+- Each operation maintains its own quality settings
+- Intermediate files are automatically cleaned up
+- Progress can be monitored via status endpoint

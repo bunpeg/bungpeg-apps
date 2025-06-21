@@ -1,0 +1,21 @@
+---
+title: Remove audio
+---
+
+Remove the audio track from a video.
+
+```http
+POST /remove-audio
+Content-Type: application/json
+
+{
+  "fileId": "string",
+  "outputFormat": "mp4" | "mkv" | "webm" | "mov" | "avi"
+}
+```
+
+### Technical Details:
+- Swaps the files
+- Uses FFmpeg's `-an` flag to strip audio
+- Preserves video quality
+- Fast operation as it only removes audio stream

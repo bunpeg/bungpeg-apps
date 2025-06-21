@@ -1,0 +1,266 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /*--color-background: hsl(0 0% 100%);*/
+  --color-background: #fafafa;
+  --color-foreground: hsl(20 14.3% 4.1%);
+  /*--color-card: hsl(0 0% 100%);*/
+  --color-card: #fafafa;
+  --color-card-foreground: hsl(20 14.3% 4.1%);
+  /*--color-popover: hsl(0 0% 100%);*/
+  --color-popover: #fafafa;
+  --color-popover-foreground: hsl(20 14.3% 4.1%);
+  /* deep burgundy */
+  --color-primary: #301728;
+  /* porsche green */
+  /*--color-primary: #184A4C;*/
+  /* deep-blue */
+  /*--color-primary: #13273F;*/
+  /*--color-primary-foreground: oklch(0.50 0.12 243);*/
+  --color-primary-foreground: #3F1521;
+  /*--color-primary-foreground:  #13273F;*/
+  /*--color-secondary: hsl(60 4.8% 95.9%);*/
+  --color-secondary: #fae3e9;
+  --color-secondary-foreground: hsl(24 9.8% 10%);
+  --color-muted: hsl(60 4.8% 95.9%);
+  --color-muted-foreground: hsl(25 5.3% 44.7%);
+  --color-accent: hsl(60 4.8% 95.9%);
+  --color-accent-foreground: hsl(24 9.8% 10%);
+  --color-destructive: oklch(0.59 0.22 18);
+  --color-destructive-foreground: hsl(60 9.1% 97.8%);
+  --color-border: hsl(20 5.9% 90%);
+  --color-input: hsl(20 5.9% 90%);
+  /*--color-ring: oklch(0.50 0.12 243);*/
+  --color-ring: #3F1521;
+  /*--color-ring:  #13273F;*/
+  --radius: 0.5rem;
+  /*--color-fd-card: hsl(0 0% 100%);*/
+  --color-fd-card: #fafafa;
+  /*--color-fd-secondary: hsl(0 0% 100%);*/
+  --color-fd-secondary: #fafafa;
+  /*--color-fd-background: hsl(0 0% 100%);*/
+  --color-fd-background: #fafafa;
+  /*--color-fd-popover: hsl(0 0% 100%);*/
+  --color-fd-popover: #fafafa;
+}
+
+:root.dark {
+  /*--color-background: #180c14;*/
+  --color-background: #10080d;
+  /*--color-background: #0a141f;*/
+  --color-foreground: hsl(20 14.3% 4.1%);
+  --color-card: #10080d;
+  --color-card-foreground: hsl(20 14.3% 4.1%);
+  --color-popover: #10080d;
+  --color-popover-foreground: hsl(20 14.3% 4.1%);
+  --color-primary: #fafafa;
+  --color-primary-foreground: #fafafa;
+  /*--color-secondary: #563c4d;*/
+  --color-secondary: #33202c;
+  /*--color-secondary: #2c3c4d;*/
+  --color-secondary-foreground: hsl(24 9.8% 10%);
+  --color-muted: hsl(60 4.8% 95.9%);
+  --color-muted-foreground: hsl(25 5.3% 44.7%);
+  --color-accent: hsl(60 4.8% 95.9%);
+  --color-accent-foreground: hsl(24 9.8% 10%);
+  --color-destructive: oklch(0.59 0.22 18);
+  --color-destructive-foreground: hsl(60 9.1% 97.8%);
+  /*--color-border: #563c4d;*/
+  --color-border: #33202c;
+  /*--color-border: #2c3c4d;*/
+  /*--color-input: hsl(20 5.9% 90%);*/
+  --color-input: #faf7f7;
+  --color-ring: #faf7f7;
+  --radius: 0.5rem;
+  /*--color-fd-card: #180c14;*/
+  --color-fd-card: #10080d;
+  /*--color-fd-card: #0a141f;*/
+  /*--color-fd-secondary: #180c14;*/
+  --color-fd-secondary: #10080d;
+  /*--color-fd-secondary: #0a141f;*/
+  /*--color-fd-background: #180c14;*/
+  --color-fd-background: #10080d;
+  /*--color-fd-background: #0a141f;*/
+  /*--color-fd-popover: #180c14;*/
+  --color-fd-popover: #10080d;
+  /*--color-fd-popover: #0a141f;*/
+}
+
+/* Animations */
+@keyframes enter {
+  from {
+    opacity: var(--tw-enter-opacity, 1);
+    transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0)
+    scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), var(--tw-enter-scale, 1))
+    rotate(var(--tw-enter-rotate, 0));
+  }
+}
+
+@keyframes exit {
+  to {
+    opacity: var(--tw-exit-opacity, 1);
+    transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0)
+    scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), var(--tw-exit-scale, 1))
+    rotate(var(--tw-exit-rotate, 0));
+  }
+}
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-border, currentColor);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply cursor-default text-primary bg-background selection:text-background selection:bg-primary;
+  }
+}
+
+@utility animate-in {
+  animation-name: enter;
+  animation-duration: 300ms; /* Default Tailwind transition duration */
+  --tw-enter-opacity: initial;
+  --tw-enter-scale: initial;
+  --tw-enter-rotate: initial;
+  --tw-enter-translate-x: initial;
+  --tw-enter-translate-y: initial;
+}
+
+@utility animate-out {
+  animation-name: exit;
+  animation-duration: 300ms; /* Default Tailwind transition duration */
+  --tw-exit-opacity: initial;
+  --tw-exit-scale: initial;
+  --tw-exit-rotate: initial;
+  --tw-exit-translate-x: initial;
+  --tw-exit-translate-y: initial;
+}
+
+/* Fade */
+@utility fade-in-0 { --tw-enter-opacity: 0; }
+@utility fade-in-50 { --tw-enter-opacity: 0.5; }
+@utility fade-in-100 { --tw-enter-opacity: 1; }
+@utility fade-out-0 { --tw-exit-opacity: 0; }
+@utility fade-out-50 { --tw-exit-opacity: 0.5; }
+@utility fade-out-100 { --tw-exit-opacity: 1; }
+
+/* Zoom */
+@utility zoom-in-0 { --tw-enter-scale: 0; }
+@utility zoom-in-50 { --tw-enter-scale: 0.5; }
+@utility zoom-in-100 { --tw-enter-scale: 1; }
+@utility zoom-out-0 { --tw-exit-scale: 0; }
+@utility zoom-out-50 { --tw-exit-scale: 0.5; }
+@utility zoom-out-100 { --tw-exit-scale: 1; }
+
+/* Spin */
+@utility spin-in-0 { --tw-enter-rotate: 0deg; }
+@utility spin-in-30 { --tw-enter-rotate: 30deg; }
+@utility spin-out-0 { --tw-exit-rotate: 0deg; }
+@utility spin-out-30 { --tw-exit-rotate: 30deg; }
+
+/* Slide */
+@utility slide-in-from-top-100 { --tw-enter-translate-y: -100%; }
+@utility slide-in-from-bottom-100 { --tw-enter-translate-y: 100%; }
+@utility slide-in-from-left-100 { --tw-enter-translate-x: -100%; }
+@utility slide-in-from-right-100 { --tw-enter-translate-x: 100%; }
+
+@utility slide-out-to-top-100 { --tw-exit-translate-y: -100%; }
+@utility slide-out-to-bottom-100 { --tw-exit-translate-y: 100%; }
+@utility slide-out-to-left-100 { --tw-exit-translate-x: -100%; }
+@utility slide-out-to-right-100 { --tw-exit-translate-x: 100%; }
+
+/* Animation Controls */
+@utility running { animation-play-state: running; }
+@utility paused { animation-play-state: paused; }
+
+/* Additional Animation Utilities */
+@utility fill-mode-none { animation-fill-mode: none; }
+@utility fill-mode-forwards { animation-fill-mode: forwards; }
+@utility fill-mode-backwards { animation-fill-mode: backwards; }
+@utility fill-mode-both { animation-fill-mode: both; }
+
+@utility direction-normal { animation-direction: normal; }
+@utility direction-reverse { animation-direction: reverse; }
+@utility direction-alternate { animation-direction: alternate; }
+@utility direction-alternate-reverse { animation-direction: alternate-reverse; }
+
+@utility repeat-0 { animation-iteration-count: 0; }
+@utility repeat-1 { animation-iteration-count: 1; }
+@utility repeat-infinite { animation-iteration-count: infinite; }
+
+/* Custom Durations, Delays, and Eases */
+@utility duration-0 { animation-duration: 0ms; }
+@utility duration-300 { animation-duration: 300ms; }
+@utility duration-600 { animation-duration: 600ms; }
+@utility duration-1000 { animation-duration: 1000ms; }
+
+@utility delay-0 { animation-delay: 0ms; }
+@utility delay-300 { animation-delay: 300ms; }
+@utility delay-600 { animation-delay: 600ms; }
+
+@utility ease-linear { animation-timing-function: linear; }
+@utility ease-in { animation-timing-function: ease-in; }
+@utility ease-out { animation-timing-function: ease-out; }
+@utility ease-in-out { animation-timing-function: ease-in-out; }
+
+@utility stripped-bg {
+  background: repeating-linear-gradient(
+    -45deg,
+    white 0px,
+    white 5px,
+    var(--color-border) 6px,
+    var(--color-border) 7px
+  );
+}
+
+
+.lds-ring div {
+  border-radius: 50%;
+  animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  border-bottom-color: transparent;
+  border-right-color: transparent;
+  border-left-color: transparent;
+}
+.lds-ring div:nth-child(1) {
+  animation-delay: -0.45s;
+}
+.lds-ring div:nth-child(2) {
+  animation-delay: -0.3s;
+}
+.lds-ring div:nth-child(3) {
+  animation-delay: -0.15s;
+}
+
+@keyframes lds-ring {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+input[data-style="native"][type="date"]::-webkit-calendar-picker-indicator {
+  @apply absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer opacity-70 hover:opacity-100 transition-opacity;
+}
