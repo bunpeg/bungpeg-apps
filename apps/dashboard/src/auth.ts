@@ -1,9 +1,7 @@
 import NextAuth, { type DefaultSession } from 'next-auth';
 import Resend from 'next-auth/providers/resend';
 // import { generateAuthByPassLink, PlanetScaleAdapter, sql } from '@hr-hub/helpers';
-
-import { env } from '@/env';
-import { PsqlAdapter } from '@/utils/psql-adapter';
+import { PsqlAdapter } from '@bunpeg/helpers';
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`

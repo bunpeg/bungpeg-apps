@@ -3,8 +3,8 @@ import { JetBrains_Mono } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import { RootProvider } from 'fumadocs-ui/provider';
 import { ThemeProvider } from 'next-themes';
+import { Toaster } from '@bunpeg/ui';
 
-import { Toaster } from '@/ui';
 import ClientProviders from '@/components/client-providers';
 import '@/styles/globals.css';
 

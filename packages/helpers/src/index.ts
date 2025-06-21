@@ -7,6 +7,6 @@ export * from './strings';
 export * from './arrays';
 export * from './dates';
 export * from './tql';
-export * from './planet-scale-adapter';
+export * from './psql-adapter';
 export * from './promises';
 export * from './db';
