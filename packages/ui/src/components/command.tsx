@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 'use client'
 
 import * as React from 'react'
@@ -12,7 +11,7 @@ import { cn } from './helpers';
 const Command = ({ className, ...props }: React.ComponentProps<typeof CommandPrimitive>) => (
   <CommandPrimitive
     className={cn(
-      'flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground',
+      'flex h-full w-full flex-col overflow-hidden rounded-md bg-background',
       className
     )}
     {...props}

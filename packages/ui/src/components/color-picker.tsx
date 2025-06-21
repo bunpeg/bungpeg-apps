@@ -60,7 +60,7 @@ const ColorPicker = (props: ColorPickerProps) => {
               <RadioGroupItem value={colorName} id={colorName} className="peer sr-only"/>
               <Label
                 htmlFor={colorName}
-                className="flex flex-col gap-2 items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground hover:cursor-pointer peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                className="flex flex-col gap-2 items-center justify-between rounded-md border-2 border-muted bg-background p-4 hover:bg-accent hover:text-accent-foreground hover:cursor-pointer peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
               >
                 <div className={cn('h-6 w-6 rounded-full', colorsMap[colorName])} />
                 <span className="text-sm">{colorName}</span>

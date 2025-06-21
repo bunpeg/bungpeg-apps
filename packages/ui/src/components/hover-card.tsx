@@ -14,7 +14,7 @@ const HoverCardContent = ({ className, align = 'center', sideOffset = 4, ...prop
     align={align}
     sideOffset={sideOffset}
     className={cn(
-      'z-50 w-64 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-hidden animate-in zoom-in-90',
+      'z-50 w-64 rounded-md border bg-background p-4 shadow-md outline-hidden animate-in zoom-in-90',
       className
     )}
     {...props}
