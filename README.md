@@ -1,135 +1,63 @@
-# Turborepo starter
+# bunpeg
 
-This Turborepo starter is maintained by the Turborepo core team.
+Bunpeg is a service for performing FFmpeg operations via HTTP. You can upload media files (video or audio), run FFmpeg commands on them, and download the results. This service is built with [Bun](https://bun.sh).
 
-## Using this example
+I ended up building it because I needed a way to run FFmpeg serverless and I coun't make it work with Next.js or React, all of this for another side project :) .
 
-Run the following command:
+PS: This is the first time I work with FFmpeg, so commands need a lot of tweaking.
 
-```sh
-npx create-turbo@latest
-```
+## Features
+- Upload video or audio files
+- Trim, transcode, or extract audio from media
+- Chain multiple FFmpeg operations in a single request
+- Download original or processed files
+- Check the status of processing tasks
 
-## What's inside?
+You can use the [playground](https://bunpeg.io/playground) to see it in action.
 
-This Turborepo includes the following packages/apps:
+## API Endpoints (Minimal Docs)
 
-### Apps and Packages
+### POST /upload
+Upload a media file (video or audio).
+- **Request:** `multipart/form-data` with a `file` field
+- **Response:** `{ "fileId": "string" }`
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+### POST /trim
+Trim a video.
+- **Request:** `application/json` with `{ "fileId": string, "start": string, "duration": string }`
+- **Response:** `{ "taskId": "string" }`
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+### POST /cut-end
+Remove seconds from the end of a media file.
+- **Request:** `application/json` with `{ "fileId": string, "duration": string }`
+- **Response:** `{ "taskId": "string" }`
 
-### Utilities
+### POST /extract-audio
+Extract audio from a video.
+- **Request:** `application/json` with `{ "fileId": string }`
+- **Response:** `{ "taskId": "string" }`
 
-This Turborepo has some additional tools already setup for you:
+### POST /transcode
+Transcode a video to a different format.
+- **Request:** `application/json` with `{ "fileId": string, "format": string }`
+- **Response:** `{ "taskId": "string" }`
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+### POST /chain
+Chain multiple FFmpeg operations together.
+- **Request:** `application/json` with `{ "fileId": string, "operations": [ ... ] }`
+- **Response:** `{ "taskId": "string" }`
 
-### Build
+### GET /status/{taskId}
+Get the status of a processing task.
+- **Response:** `{ "status": "pending|complete|error", "error": string | null }`
 
-To build all apps and packages, run the following command:
+### GET /download/{fileId}
+Download the original uploaded file.
 
-```
-cd my-turborepo
+### GET /output/{fileId}
+Download the processed output file.
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
+---
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
-```
+For a full OpenAPI spec and interactive docs, visit the `/` route in your browser after starting the service.
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
