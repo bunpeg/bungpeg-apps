@@ -4,6 +4,8 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@source '../../../../packages/ui';
+
 @theme {
   /*--color-background: hsl(0 0% 100%);*/
   --color-background: #fafafa;
