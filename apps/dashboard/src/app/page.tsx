@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { FingerprintIcon, GithubIcon, PencilIcon, ServerOffIcon, Settings2Icon, SparklesIcon } from 'lucide-react';
+import { FingerprintIcon, PencilIcon, ServerOffIcon, Settings2Icon, SparklesIcon } from 'lucide-react';
 import { Button } from '@bunpeg/ui';
+import { GitHubIcon } from '@bunpeg/ui/icons';
 
 import DynamicThemeToggle from '@/components/dynamic-theme-toggle';
 
@@ -8,24 +9,25 @@ export default async function Home() {
   return (
     <section className="py-12 md:py-20">
       <DynamicThemeToggle />
-      <div className="mx-auto max-w-5xl space-y-8 px-6 md:space-y-16">
-        <div className="relative z-10 mx-auto max-w-2xl flex flex-col items-center text-center space-y-12">
+      <div className="mx-auto max-w-5xl px-6">
+        <div className="relative z-10 mx-auto max-w-2xl flex flex-col items-center text-center gap-10 mb-10">
           <h2 className="text-balance text-4xl font-medium lg:text-6xl ">Bunpeg</h2>
           <p>
             Bunpeg is a service for performing FFmpeg operations via http.{' '}
             You can upload media files (video or audio), run FFmpeg commands on them, and download the results.
           </p>
+
           <div className="hidden md:flex items-center gap-2">
             <Link href="/playground">
-              <Button variant="outline">Check the playground</Button>
+              <Button variant="outline">Playground</Button>
             </Link>
             <Link href="/docs">
               <Button variant="default">Read the docs</Button>
             </Link>
             <Link href="https://github.com/bunpeg/bunpeg" target="_blank" rel="noopener noreferrer">
               <Button variant="outline">
-                <GithubIcon className="size-4 mr-2" />
-                Check the repo
+                <GitHubIcon className="size-4 mr-2" />
+                Github repo
               </Button>
             </Link>
           </div>
@@ -35,6 +37,7 @@ export default async function Home() {
             </Link>
           </div>
         </div>
+
         <div className="relative mx-auto grid gap-4 md:gap-1 max-w-4xl *:p-12 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-3 border">
             <div className="flex items-center gap-2">

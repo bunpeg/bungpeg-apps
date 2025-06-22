@@ -16,7 +16,7 @@
   --color-primary-foreground: #184A4C;
   /*--color-primary-foreground:  #13273F;*/
   /*--color-secondary: hsl(60 4.8% 95.9%);*/
-  --color-secondary: #a5cbcc;
+  --color-secondary: #d6ebec;
   --color-secondary-foreground: hsl(24 9.8% 10%);
   --color-muted: hsl(60 4.8% 95.9%);
   --color-muted-foreground: hsl(25 5.3% 44.7%);
@@ -31,14 +31,14 @@
 }
 
 :root.dark {
-  --color-background: #184A4C;
+  --color-background: #061a1a;
   --color-foreground: hsl(20 14.3% 4.1%);
-  --color-card: #184A4C;
+  --color-card: #061a1a;
   --color-card-foreground: hsl(20 14.3% 4.1%);
   --color-primary: #fafafa;
   --color-primary-foreground: #fafafa;
   /*--color-secondary: #563c4d;*/
-  --color-secondary: #33202c;
+  --color-secondary: #103a3a;
   /*--color-secondary: #2c3c4d;*/
   --color-secondary-foreground: hsl(24 9.8% 10%);
   --color-muted: hsl(60 4.8% 95.9%);
