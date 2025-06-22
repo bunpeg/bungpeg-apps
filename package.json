@@ -7,6 +7,8 @@
     "dev": "turbo run dev",
     "dev:dashboard": "turbo dev --filter @bunpeg/dashboard --log-order stream",
     "build:dashboard": "turbo build --filter @bunpeg/dashboard --log-order stream",
+    "dev:webtools": "turbo dev --filter @bunpeg/webtools --log-order stream",
+    "build:webtools": "turbo build --filter @bunpeg/webtools --log-order stream",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types"

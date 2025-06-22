@@ -1,5 +1,5 @@
 {
-  "name": "@bunpeg/dashboard",
+  "name": "@bunpeg/webtools",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -7,9 +7,8 @@
     "build": "next build",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "dev": "next dev --turbopack --port 3001",
-    "start": "next start",
-    "postinstall": "fumadocs-mdx"
+    "dev": "next dev --turbopack --port 3002",
+    "start": "next start"
   },
   "dependencies": {
     "@bunpeg/helpers": "*",
@@ -51,9 +50,6 @@
     "clsx": "2.1.1",
     "cmdk": "1.1.1",
     "date-fns": "3.6.0",
-    "fumadocs-core": "15.5.2",
-    "fumadocs-mdx": "11.6.8",
-    "fumadocs-ui": "15.5.2",
     "geist": "1.4.2",
     "lucide-react": "0.515.0",
     "nanoid": "5.1.5",
