@@ -35,17 +35,17 @@ export default async function Home() {
           <div className="space-y-3 border">
             <div className="flex items-center gap-2">
               <ServerOffIcon className="size-4" />
-              <h3 className="text-sm font-medium">Extract</h3>
+              <h3 className="text-sm font-medium">Extract audio</h3>
             </div>
-            <p className="text-sm">You can now use FFmpeg from any serverless environment.</p>
+            <p className="text-sm">Extract audio from video files</p>
           </div>
 
           <div className="space-y-2 border relative">
             <div className="flex items-center gap-2">
               <Settings2Icon className="size-4" />
-              <h3 className="text-sm font-medium">Control</h3>
+              <h3 className="text-sm font-medium">Remove audio</h3>
             </div>
-            <p className="text-sm">All operations run sequentially in a queue.</p>
+            <p className="text-sm">Remove the audio from video files</p>
           </div>
 
           <div className="space-y-2 border relative">
