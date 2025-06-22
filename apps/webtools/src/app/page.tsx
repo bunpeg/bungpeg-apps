@@ -1,5 +1,13 @@
 import Link from 'next/link';
-import { FingerprintIcon, GithubIcon, PencilIcon, ServerOffIcon, Settings2Icon, SparklesIcon } from 'lucide-react';
+import {
+  FileAudioIcon,
+  FingerprintIcon,
+  GithubIcon,
+  PencilIcon,
+  ServerOffIcon,
+  Settings2Icon,
+  SparklesIcon, VolumeOffIcon,
+} from 'lucide-react';
 import { Button } from '@bunpeg/ui';
 
 import DynamicThemeToggle from '@/components/dynamic-theme-toggle';
@@ -34,7 +42,7 @@ export default async function Home() {
         <div className="relative mx-auto grid gap-4 md:gap-1 max-w-4xl *:p-12 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-3 border">
             <div className="flex items-center gap-2">
-              <ServerOffIcon className="size-4" />
+              <FileAudioIcon className="size-4" />
               <h3 className="text-sm font-medium">Extract audio</h3>
             </div>
             <p className="text-sm">Extract audio from video files</p>
@@ -42,7 +50,7 @@ export default async function Home() {
 
           <div className="space-y-2 border relative">
             <div className="flex items-center gap-2">
-              <Settings2Icon className="size-4" />
+              <VolumeOffIcon className="size-4" />
               <h3 className="text-sm font-medium">Remove audio</h3>
             </div>
             <p className="text-sm">Remove the audio from video files</p>

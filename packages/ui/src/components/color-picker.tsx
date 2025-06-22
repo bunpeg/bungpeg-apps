@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { SwatchBookIcon } from 'lucide-react';
 
 import { Popover, PopoverContent, PopoverTrigger } from './popover';

@@ -1,6 +1,5 @@
-/* eslint-disable max-len */
 'use client'
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { ClipboardIcon } from 'lucide-react';
 
 import { Button } from './button';
@@ -8,7 +7,7 @@ import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from './tool
 import { cn } from './helpers';
 
 interface Props {
-  children: any;
+  children: React.ReactNode;
   className?: string;
 }
 
