@@ -3,13 +3,7 @@ import * as React from 'react'
 import { cn } from './helpers';
 
 const Card = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn(
-      'rounded-lg border border-neutral-200 bg-white text-gray-950 shadow-xs',
-      className
-    )}
-    {...props}
-  />
+  <div className={cn('border', className)} {...props} />
 )
 Card.displayName = 'Card';
 
