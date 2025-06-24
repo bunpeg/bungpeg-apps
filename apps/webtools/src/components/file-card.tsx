@@ -1,12 +1,21 @@
 'use client'
 
 import { useState } from 'react';
-import { Loader } from '@bunpeg/ui';
-import { FileVideoIcon } from 'lucide-react';
+import {
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  Loader, toast,
+} from '@bunpeg/ui';
+import { CloudDownloadIcon, EllipsisVerticalIcon, ExternalLinkIcon, FileVideoIcon, Trash2Icon } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { tryCatch } from '@bunpeg/helpers';
 
 import { env } from '@/env';
+import { appendFile, removeFile, type FileStore } from '@/utils/file-store';
 
 interface UserFile {
   id: string;
@@ -20,26 +29,28 @@ interface UserFile {
 interface FileCardProps {
   id?: string;
   file?: File;
+  store: FileStore;
 }
 export default function FileCard(props: FileCardProps) {
-  const { id: __id, file } = props;
+  const { id: __id, file, store } = props;
   const [id, setId] = useState<string | null>(__id ?? null);
 
   if (!id && !file) return null;
 
   if (!id && file) {
-    return <UploadFileCard file={file} onSuccess={setId} />
+    return <UploadFileCard file={file} onSuccess={setId} store={store} />
   }
 
-  return <DbFileCard id={id!} name={file!.name} />;
+  return <DbFileCard id={id!} name={file!.name} store={store} />;
 }
 
 interface UploadFileCardProps {
   file: File;
+  store: FileStore;
   onSuccess: (fileId: string) => void;
 }
-function UploadFileCard(props: UploadFileCardProps) {
-  const { file, onSuccess } = props;
+export function UploadFileCard(props: UploadFileCardProps) {
+  const { file, store, onSuccess } = props;
   const [uploaded, setUploaded] = useState(false);
 
   const { mutate: upload, isPending, isError: mutationFailed, error: mutationError } = useMutation({
@@ -57,8 +68,9 @@ function UploadFileCard(props: UploadFileCardProps) {
 
       setUploaded(true);
       const res = await response.json();
-      console.log('upload response', res);
-      onSuccess(res.fileId as string);
+      const fileId = res.fileId as string;
+      appendFile(store, fileId, file.name);
+      onSuccess(fileId);
     },
   });
 
@@ -91,9 +103,10 @@ function UploadFileCard(props: UploadFileCardProps) {
 interface DbFileCardProps {
   id: string;
   name: string;
+  store: FileStore;
 }
-function DbFileCard(props: DbFileCardProps) {
-  const { id, name } = props;
+export function DbFileCard(props: DbFileCardProps) {
+  const { id, name, store } = props;
 
   const { data: file, error } = useQuery({
     queryKey: ['file', id],
@@ -137,6 +150,27 @@ function DbFileCard(props: DbFileCardProps) {
     refetchOnWindowFocus: false,
   });
 
+  const { mutate: deleteFile, isPending: isDeleting } = useMutation<void, Error, string, unknown>({
+    mutationFn: async (fileId) => {
+      const response = await fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/delete/${fileId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok || response.status !== 200) {
+        throw new Error('Unable to delete the file');
+      }
+    },
+    onSuccess: async () => {
+      // after(async () => {
+      //   removeFile(store, id);
+      // })
+      removeFile(store, id);
+    },
+    onError: (err) => {
+      toast.error('Failed to delete the file', { description: err.message });
+    }
+  })
+
   if (error) {
     return (
       <div className="border flex gap-2 p-4">
@@ -161,6 +195,36 @@ function DbFileCard(props: DbFileCardProps) {
         </span>
       </div>
       {isLoading && <Loader size="icon" color="primary" className="ml-auto" />}
+      {!isLoading && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="xs" className="ml-auto">
+              <EllipsisVerticalIcon className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="bottom" align="end">
+            <a href={`${env.NEXT_PUBLIC_BUNPEG_API}/output/${id}`} target="_blank">
+              <DropdownMenuItem>
+                <ExternalLinkIcon className="size-4 mr-2" />
+                Preview
+              </DropdownMenuItem>
+            </a>
+            <a href={`${env.NEXT_PUBLIC_BUNPEG_API}/download/${id}`} target="_blank">
+              <DropdownMenuItem>
+                <CloudDownloadIcon className="size-4 mr-2" />
+                Download
+              </DropdownMenuItem>
+            </a>
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem onClick={() => deleteFile(id)} disabled={isDeleting}>
+              <Trash2Icon className="size-4 mr-2" />
+              Remove
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
     </div>
   );
 }

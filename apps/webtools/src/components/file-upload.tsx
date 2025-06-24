@@ -13,7 +13,7 @@ interface Props {
   onSuccess: (files: File[]) => void;
 }
 
-export function FileUploadCard(props: Props) {
+export default function FileUploadCard(props: Props) {
   const { title, description, multiple, accept, onSuccess } = props;
   const [isDragging, setIsDragging] = useState(false);
 

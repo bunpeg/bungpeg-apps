@@ -5,6 +5,7 @@ import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@bunpeg/ui';
 
 import ClientProviders from '@/components/client-providers';
+import DynamicThemeToggle from '@/components/dynamic-theme-toggle';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
@@ -22,6 +23,7 @@ export default async function RootLayout({
       <body className={`${font.className}`}>
         {process.env.NODE_ENV !== 'development' && <Analytics />}
         <ThemeProvider attribute="class" enableColorScheme>
+          <DynamicThemeToggle />
           <ClientProviders session={null}>
             {children}
             <Toaster />

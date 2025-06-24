@@ -24,8 +24,6 @@ import {
   VolumeOffIcon,
 } from 'lucide-react';
 import { type inferRouterOutputs } from '@trpc/server';
-
-import { api } from '@/trpc/react';
 import {
   Button,
   Checkbox,
@@ -52,6 +50,7 @@ import {
 import { append, remove } from '@bunpeg/helpers';
 
 import { env } from '@/env';
+import { api } from '@/trpc/react';
 import { type AppRouter } from '@/server/api/root';
 
 type UserFile = inferRouterOutputs<AppRouter>['files']['list'][0];

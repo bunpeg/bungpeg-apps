@@ -10,12 +10,9 @@ import {
 import { Button, RenderIf, Separator } from '@bunpeg/ui';
 import { GitHubIcon } from '@bunpeg/ui/icons';
 
-import DynamicThemeToggle from '@/components/dynamic-theme-toggle';
-
 export default async function Home() {
   return (
     <section className="py-12 md:py-20">
-      <DynamicThemeToggle />
       <div className="mx-auto max-w-5xl px-6">
         <div className="relative z-10 mx-auto max-w-2xl flex flex-col items-center text-center space-y-12 mb-10">
           <h2 className="text-balance text-4xl font-medium lg:text-6xl ">Bunpeg webtools</h2>
