@@ -35,12 +35,10 @@
   --color-card-foreground: hsl(20 14.3% 4.1%);
   --color-primary: #fafafa;
   --color-primary-foreground: #fafafa;
-  /*--color-secondary: #563c4d;*/
   --color-secondary: #103a3a;
-  /*--color-secondary: #2c3c4d;*/
   --color-secondary-foreground: hsl(24 9.8% 10%);
-  --color-muted: hsl(60 4.8% 95.9%);
-  --color-muted-foreground: hsl(25 5.3% 44.7%);
+  --color-muted: hsl(60, 2%, 89%);
+  --color-muted-foreground: hsl(60, 2%, 89%);
   --color-accent: hsl(60 4.8% 95.9%);
   --color-accent-foreground: hsl(24 9.8% 10%);
   --color-destructive: oklch(0.59 0.22 18);

@@ -272,12 +272,11 @@ export function validateFile(file: File) {
     return { ok: false as const, error: 'system-file' as const };
   }
 
-  // TODO: disabled for now
-  // check file size to be less than 4.5MB
-  // const maxSize = 4.5 * 1024 * 1024;
-  // if (file.size > maxSize) {
-  //   return { ok: false as const, error: 'max-size' as const };
-  // }
+  // check file size to be less than 500MB
+  const maxSize = 500 * 1024 * 1024;
+  if (file.size > maxSize) {
+    return { ok: false as const, error: 'max-size' as const };
+  }
 
   return { ok: true as const, error: null };
 }

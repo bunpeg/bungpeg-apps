@@ -662,19 +662,19 @@ function UploadButton() {
             });
           }
 
-          // if (error === 'max-size') {
-          //   toast('File size is too big', {
-          //     description: (
-          //       <>
-          //         The size of the file is over our 4.5MB limit.
-          //         <br />
-          //         <br />
-          //         File: <span className="text-xs font-medium">{file.name}</span>
-          //       </>
-          //     ),
-          //     duration: 5000,
-          //   });
-          // }
+          if (error === 'max-size') {
+            toast('File size is too big', {
+              description: (
+                <>
+                  The size of the file is over our 500MB limit.
+                  <br />
+                  <br />
+                  File: <span className="text-xs font-medium">{file.name}</span>
+                </>
+              ),
+              duration: 5000,
+            });
+          }
 
           clearFileInput();
           return;
@@ -692,7 +692,7 @@ function UploadButton() {
 
           if (response.ok && response.status >= 200) {
             const data = await response.json();
-            toast('Upload completed', { description: `New file uploaded with ID: ${(data as any).fileId}` });
+            toast('Upload completed', { description: `New file uploaded with ID: ${data.fileId}` });
             void utils.files.list.invalidate();
           } else {
             console.error(response);

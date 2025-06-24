@@ -7,7 +7,7 @@ import {
   Settings2Icon,
   VolumeOffIcon,
 } from 'lucide-react';
-import { Button, RenderIf } from '@bunpeg/ui';
+import { Button, RenderIf, Separator } from '@bunpeg/ui';
 import { GitHubIcon } from '@bunpeg/ui/icons';
 
 import DynamicThemeToggle from '@/components/dynamic-theme-toggle';
@@ -28,16 +28,22 @@ export default async function Home() {
           <Toolbox title="Trim" description="Trim video & audio files lengths" icon={<ScissorsLineDashedIcon className="size-4" />} comingSoon />
           <Toolbox title="Scale" description="Change the scale & aspect ration of video files" icon={<ExpandIcon className="size-4" />} comingSoon />
           <Toolbox title="Change formats" description="Transcode video files to other formats" icon={<Settings2Icon className="size-4" />} comingSoon />
-          <Toolbox link="/extract-audio" title="Extract audio" description="Extract audio from video files" icon={<FileAudioIcon className="size-4" />} comingSoon />
+          <Toolbox link="/extract-audio" title="Extract audio" description="Extract audio from video files" icon={<FileAudioIcon className="size-4" />} />
           <Toolbox title="Remove audio" description="Remove the audio from video files" icon={<VolumeOffIcon className="size-4" />} comingSoon />
           <Toolbox title="Extract thumbnail" description="Select and extract any frame as thumbnail" icon={<ImagePlusIcon className="size-4" />} comingSoon />
         </div>
 
-        <footer className="mx-auto max-w-4xl flex flex-col items-center mt-5">
+        <footer className="mx-auto max-w-4xl flex justify-center items-center gap-2 mt-5">
           <a href="https://github.com/bunpeg/bunpeg" target="_blank" rel="noopener noreferrer">
             <Button variant="link">
               <GitHubIcon className="size-4 mr-2 text-current" />
               Github repo
+            </Button>
+          </a>
+          <Separator orientation="vertical" className="h-5" />
+          <a href="https://bunpeg.io" target="_blank" rel="noopener noreferrer">
+            <Button variant="link">
+              Built with Bunpeg
             </Button>
           </a>
         </footer>

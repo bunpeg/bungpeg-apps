@@ -5,15 +5,16 @@ import { useRef, useState } from 'react';
 import { FilesIcon } from 'lucide-react';
 import { Button, cn } from '@bunpeg/ui';
 
-import { ALLOWED_FORMATS, ALLOWED_MIME_TYPES } from '@/utils/formats';
-
 interface Props {
+  title?: string;
+  description?: string;
   multiple?: boolean;
+  accept: string[];
   onSuccess: (files: File[]) => void;
 }
 
 export function FileUploadCard(props: Props) {
-  const { multiple, onSuccess } = props;
+  const { title, description, multiple, accept, onSuccess } = props;
   const [isDragging, setIsDragging] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -81,7 +82,7 @@ export function FileUploadCard(props: Props) {
         className="hidden"
         multiple={multiple}
         onChange={handleFileInput}
-        accept={ALLOWED_MIME_TYPES.join(',')}
+        accept={accept.join(',')}
       />
 
       <div className="flex flex-col items-center justify-center gap-4 text-center">
@@ -89,8 +90,12 @@ export function FileUploadCard(props: Props) {
           <FilesIcon className="h-8 w-8 text-primary" />
         </div>
         <div>
-          <h3 className="text-lg font-medium">Drag & Drop your files here</h3>
-          <p className="text-sm text-muted-foreground mt-1">Accepts video & audio files</p>
+          <h3 className="text-lg font-medium">
+            {title ?? 'Drag & Drop your files here'}
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            {description ?? 'Accepts video & audio files'}
+          </p>
         </div>
         <Button onClick={openFileDialog} variant="outline" className="mt-2">
           Select Files
@@ -100,13 +105,13 @@ export function FileUploadCard(props: Props) {
   )
 }
 
-export function validateFileType (file: File): boolean {
+export function validateFileType (file: File, types: string[], formats: string[]): boolean {
   const fileType = file.type
   const fileName = file.name
   const fileExtension = fileName.substring(fileName.lastIndexOf('.')).toLowerCase()
 
   return (
-    ALLOWED_MIME_TYPES.includes(fileType) ||
-    ALLOWED_FORMATS.some((ext) => fileExtension === ext.toLowerCase())
+    types.includes(fileType) ||
+    formats.some((ext) => fileExtension === ext.toLowerCase())
   )
 }
