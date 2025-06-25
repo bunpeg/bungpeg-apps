@@ -6,9 +6,9 @@ export function retrieveFiles(store: FileStore) {
 
   const files = [];
   for (const id of localList) {
-    const name = localStorage.getItem(buildFileKey(store, id));
-    if (name) {
-      files.push({ id, name });
+    const fileInfo = retrieveFile(store, id);
+    if (fileInfo) {
+      files.push({ id, ...fileInfo });
     } else {
       localStorage.removeItem(buildFileKey(store, id));
     }
@@ -21,7 +21,14 @@ export function appendFile(store: FileStore, fileId: string, name: string) {
   const localList = retrieveList(store);
   localList.push(fileId);
   localStorage.setItem(buildListKey(store), JSON.stringify(localList));
-  localStorage.setItem(buildFileKey(store, fileId), name);
+  localStorage.setItem(buildFileKey(store, fileId), JSON.stringify({ name, status: 'pending' }));
+}
+
+export function markFileAsProcessed(store: FileStore, fileId: string) {
+  const fileInfo = retrieveFile(store, fileId);
+  if (fileInfo) {
+    localStorage.setItem(buildFileKey(store, fileId), JSON.stringify({ name: fileInfo.name, status: 'processed' }));
+  }
 }
 
 export function removeFile(store: FileStore, fileId: string) {
@@ -34,6 +41,11 @@ export function removeFile(store: FileStore, fileId: string) {
 function retrieveList(store: FileStore) {
   const localListStr = localStorage.getItem(buildListKey(store)) ?? '';
   return (localListStr ? JSON.parse(localListStr) : []) as string[];
+}
+
+function retrieveFile(store: FileStore, fileId: string) {
+  const fileInfoStr = localStorage.getItem(buildFileKey(store, fileId));
+  return fileInfoStr ? JSON.parse(fileInfoStr) as { name: string; status: string } : null;
 }
 
 function buildListKey(store: FileStore) {

@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Button,
   DropdownMenu,
@@ -8,14 +8,15 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  Loader, toast,
+  Loader,
+  toast,
 } from '@bunpeg/ui';
 import { CloudDownloadIcon, EllipsisVerticalIcon, ExternalLinkIcon, FileVideoIcon, Trash2Icon } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { tryCatch } from '@bunpeg/helpers';
 
 import { env } from '@/env';
-import { appendFile, removeFile, type FileStore } from '@/utils/file-store';
+import { appendFile, type FileStore, markFileAsProcessed, removeFile } from '@/utils/file-store';
 
 interface UserFile {
   id: string;
@@ -24,24 +25,6 @@ interface UserFile {
   mime_type: string;
   metadata?: string | null;
   created_at: string;
-}
-
-interface FileCardProps {
-  id?: string;
-  file?: File;
-  store: FileStore;
-}
-export default function FileCard(props: FileCardProps) {
-  const { id: __id, file, store } = props;
-  const [id, setId] = useState<string | null>(__id ?? null);
-
-  if (!id && !file) return null;
-
-  if (!id && file) {
-    return <UploadFileCard file={file} onSuccess={setId} store={store} />
-  }
-
-  return <DbFileCard id={id!} name={file!.name} store={store} />;
 }
 
 interface UploadFileCardProps {
@@ -104,11 +87,15 @@ interface DbFileCardProps {
   id: string;
   name: string;
   store: FileStore;
+  processing?: boolean;
+  processed?: boolean;
+  onRemove: (id: string) => void;
+  onSuccess: (fileId: string) => void;
 }
 export function DbFileCard(props: DbFileCardProps) {
-  const { id, name, store } = props;
+  const { id, name, store, processing = false, processed = false, onRemove, onSuccess } = props;
 
-  const { data: file, error } = useQuery({
+  const { data: file, error: fileError } = useQuery({
     queryKey: ['file', id],
     queryFn: async () => {
       const { data: response, error: reqError } = await tryCatch(
@@ -125,7 +112,6 @@ export function DbFileCard(props: DbFileCardProps) {
       return (data.file) as UserFile;
     },
     throwOnError: false,
-    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 
@@ -145,10 +131,31 @@ export function DbFileCard(props: DbFileCardProps) {
       const data = await response.json();
       return data.meta;
     },
+    enabled: !!file && !file.metadata,
     throwOnError: false,
-    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
+
+  const { data: status } = useQuery({
+    queryKey: ['file', id, 'status'],
+    queryFn: async () => {
+      const { data: response, error: reqError } = await tryCatch(
+        fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/status/${id}`)
+      );
+
+      if (reqError) throw reqError;
+
+      if (!response.ok || response.status === 400) {
+        throw new Error(`File ${id} does not exist.`);
+      }
+
+      return (await response.json()) as { fileId: string; status: string, error: string | null };
+    },
+    enabled: !!file && (processing || processed),
+    refetchInterval: processing ? 1000 : undefined,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  })
 
   const { mutate: deleteFile, isPending: isDeleting } = useMutation<void, Error, string, unknown>({
     mutationFn: async (fileId) => {
@@ -161,15 +168,28 @@ export function DbFileCard(props: DbFileCardProps) {
       }
     },
     onSuccess: async () => {
-      // after(async () => {
-      //   removeFile(store, id);
-      // })
       removeFile(store, id);
+      onRemove(id);
     },
     onError: (err) => {
       toast.error('Failed to delete the file', { description: err.message });
     }
   })
+
+  useEffect(() => {
+    if (processing && status?.status !== 'processing') {
+      onSuccess(id);
+      markFileAsProcessed(store, id);
+    }
+    // the onSuccess function doesn't need to be a dependency
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, processing, id]);
+
+  const metadata = file?.metadata ?? meta;
+  const error = fileError?.message ?? status?.error;
+
+  console.log('statusError', status?.error);
+  console.log('status', status);
 
   if (error) {
     return (
@@ -178,7 +198,7 @@ export function DbFileCard(props: DbFileCardProps) {
         <div className="flex flex-col gap-1">
           <span>{name}</span>
           <span className="text-xs text-red-500">
-            {error.message}
+            {error}
           </span>
         </div>
       </div>
@@ -191,7 +211,7 @@ export function DbFileCard(props: DbFileCardProps) {
       <div className="flex flex-col gap-1">
         <span>{file?.file_name ?? name}</span>
         <span className="text-xs text-muted-foreground">
-          ID: {id} <Stats metadata={meta ?? null} />
+          ID: {id} <Stats metadata={metadata ?? null} />
         </span>
       </div>
       {isLoading && <Loader size="icon" color="primary" className="ml-auto" />}
@@ -244,11 +264,11 @@ function Stats({ metadata }: { metadata: unknown | null }) {
   const segments = [];
 
   if (meta.size) {
-    segments.push(`size: ${(meta.size / 1024 / 1024).toFixed(2)} MB`);
+    segments.push(`size: ${(meta.size / 1024 / 1024).toFixed(2)}MB`);
   }
 
   if (meta.duration) {
-    segments.push(`duration: ${meta.duration.toFixed(2)} s`);
+    segments.push(`duration: ${meta.duration.toFixed(2)}s`);
   }
 
   if (meta.resolution?.width && meta.resolution?.height) {

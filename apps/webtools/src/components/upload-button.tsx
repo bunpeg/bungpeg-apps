@@ -4,11 +4,12 @@ import { CloudUploadIcon } from 'lucide-react';
 
 interface Props {
   multiple?: boolean;
+  disabled?: boolean;
   accept: string[];
   onSuccess: (files: File[]) => void;
 }
 export default function UploadButton(props: Props) {
-  const { multiple, accept, onSuccess } = props;
+  const { multiple, disabled, accept, onSuccess } = props;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const openFilePicker = () => {
@@ -36,7 +37,7 @@ export default function UploadButton(props: Props) {
 
   return (
     <>
-      <Button size="icon" variant="outline" onClick={openFilePicker}>
+      <Button size="icon" variant="outline" onClick={openFilePicker} disabled={disabled}>
         <CloudUploadIcon className="size-4" />
       </Button>
       <input
@@ -44,6 +45,7 @@ export default function UploadButton(props: Props) {
         className="hidden"
         ref={fileInputRef}
         multiple={multiple}
+        disabled={disabled}
         onChange={handleChange}
         accept={accept.join(',')}
       />

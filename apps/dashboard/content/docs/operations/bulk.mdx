@@ -1,27 +1,24 @@
 ---
-title: Chain operations
+title: Bulk operations
 ---
 
-Chain multiple operations on a file.
+Create multiples of one operation on multiple files.
+This can be considered an inverse of the `/chain` endpoint
 
 ```http
-POST /chain
+POST /bulk
 Content-Type: application/json
 
 {
-  "fileId": "string",
-  "operations": [
-    {
+  "fileIds": ["string"],
+  "operation": {
       "type": "transcode" | "resize-video" | "trim" | "trim-end" | "extract-audio" | "remove-audio" | "extract-thumbnail",
       // Operation-specific parameters
     }
-  ]
 }
 ```
 
 ### Technical Details:
-- Operations are executed sequentially
-- Each operation maintains its own quality settings
-- Intermediate files are automatically cleaned up
+- Operations can be executed parallel as they affect different files
 - Progress can be monitored via status endpoint
 - It doesn't include the `add-audio` or `merge-media` operations as these use a different payload

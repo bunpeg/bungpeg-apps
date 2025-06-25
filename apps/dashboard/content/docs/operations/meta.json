@@ -10,6 +10,7 @@
     "remove-audio",
     "add-audio",
     "merge",
-    "chain"
+    "chain",
+    "bulk"
   ]
 }
