@@ -23,6 +23,11 @@ export default function ExtractAudio() {
     mutationFn: async () => {
       const pendingFiles = uploadedFiles.filter((f) => f.status === 'pending');
 
+      if (pendingFiles.length === 0) {
+        toast('No files left to process');
+        return;
+      }
+
       const { data: response, error: reqError } = await tryCatch(
         fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/bulk`, {
           method: 'POST',
@@ -77,28 +82,13 @@ export default function ExtractAudio() {
       if (fileIndex === -1) return prev;
       return remove(prev, fileIndex);
     })
-    setUploadedFiles((prev) => {
-      const fileIndex = prev.findIndex((f) => f.id === id);
-      if (fileIndex === -1) return prev;
-      return remove(prev, fileIndex);
-    })
   }
 
   const handleProcessedFile = (id: string) => {
-    setUploadedFiles((prev) => {
-      const fileIndex = prev.findIndex(f => f.id === id);
-      if (fileIndex === -1) return prev;
-      return remove(prev, fileIndex);
-    });
     setUploadedFiles((prev) => applyWhere(prev, (f) => f.id === id, (f) => ({ ...f, status: 'processed' })));
   }
 
   const handleFailedFile = (id: string) => {
-    setUploadedFiles((prev) => {
-      const fileIndex = prev.findIndex(f => f.id === id);
-      if (fileIndex === -1) return prev;
-      return remove(prev, fileIndex);
-    });
     setUploadedFiles((prev) => applyWhere(prev, (f) => f.id === id, (f) => ({ ...f, status: 'failed' })));
   }
 
