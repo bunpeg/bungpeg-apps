@@ -201,7 +201,8 @@ export default function ExtractAudio() {
             {processedFiles.map((file) => (
               <DbFileCard
                 {...file}
-                key={file.id}
+                processed
+                key={`${file.id}-processed`}
                 store="extract-audio"
                 onRemove={handleRemoveFile}
               />

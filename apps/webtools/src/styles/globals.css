@@ -186,8 +186,8 @@
 @utility stripped-bg {
   background: repeating-linear-gradient(
     -45deg,
-    white 0px,
-    white 5px,
+    var(--color-background) 0px,
+    var(--color-background) 5px,
     var(--color-border) 6px,
     var(--color-border) 7px
   );

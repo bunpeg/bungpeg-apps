@@ -88,15 +88,16 @@ interface DbFileCardProps {
   name: string;
   store: FileStore;
   processing?: boolean;
+  processed?: boolean;
   onRemove: (id: string) => void;
   onSuccess?: (fileId: string) => void;
   onError?: (fileId: string) => void;
 }
 export function DbFileCard(props: DbFileCardProps) {
-  const { id, name, store, processing = false, onRemove, onSuccess, onError } = props;
+  const { id, name, store, processing = false, processed = false, onRemove, onSuccess, onError } = props;
 
   const { data: file, isLoading: loadingFileInfo, error: fileError } = useQuery({
-    queryKey: ['file', id],
+    queryKey: processed ? ['file', id, 'processed'] : ['file', id],
     queryFn: async () => {
       const { data: response, error: reqError } = await tryCatch(
         fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/files/${id}`)
@@ -206,6 +207,9 @@ export function DbFileCard(props: DbFileCardProps) {
             {error}
           </span>
         </div>
+        <Button variant="ghost" size="xs" className="ml-auto" onClick={() => deleteFile(id)} disabled={isDeleting}>
+          <Trash2Icon className="size-4" />
+        </Button>
       </div>
     );
   }
@@ -219,8 +223,8 @@ export function DbFileCard(props: DbFileCardProps) {
           ID: {id} <Stats metadata={metadata ?? null} />
         </span>
       </div>
-      {isLoading && <Loader size="icon" color="primary" className="ml-auto" />}
-      {!isLoading && (
+      {isLoading || processing ? <Loader size="icon" color="primary" className="ml-auto" /> : null}
+      {!isLoading && !processing && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="xs" className="ml-auto">

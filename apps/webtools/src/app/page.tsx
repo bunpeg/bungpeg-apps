@@ -59,7 +59,7 @@ interface ToolboxProps {
 function Toolbox(props: ToolboxProps) {
   const { icon, description, link, title, comingSoon } = props;
   return (
-    <Link href={link ?? '/'} className="space-y-2 p-12 border relative cursor-pointer transition-colors ease-linear hover:border-primary">
+    <Link href={link ?? '/'} className="space-y-2 p-12 border relative cursor-pointer transition-colors ease-linear hover:border-primary dark:hover:bg-neutral-50/10 dark:hover:border-primary">
       <div className="flex items-center gap-2">
         {icon}
         <h3 className="text-sm font-medium">{title}</h3>
