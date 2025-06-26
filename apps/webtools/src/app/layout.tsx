@@ -9,7 +9,7 @@ import DynamicThemeToggle from '@/components/dynamic-theme-toggle';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
-  title: 'Bunpeg',
+  title: 'Bunpeg Tools',
   icons: [{ rel: 'icon', url: '/favicon.ico' }],
 };
 
