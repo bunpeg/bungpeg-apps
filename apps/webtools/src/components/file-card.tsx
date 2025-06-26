@@ -16,7 +16,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { tryCatch } from '@bunpeg/helpers';
 
 import { env } from '@/env';
-import { appendFile, type FileStore, markFileAsProcessed, removeFile } from '@/utils/file-store';
+import { appendFile, type FileStore, markFileAsFailed, markFileAsProcessed, removeFile } from '@/utils/file-store';
 
 interface UserFile {
   id: string;
@@ -88,14 +88,14 @@ interface DbFileCardProps {
   name: string;
   store: FileStore;
   processing?: boolean;
-  processed?: boolean;
   onRemove: (id: string) => void;
-  onSuccess: (fileId: string) => void;
+  onSuccess?: (fileId: string) => void;
+  onError?: (fileId: string) => void;
 }
 export function DbFileCard(props: DbFileCardProps) {
-  const { id, name, store, processing = false, processed = false, onRemove, onSuccess } = props;
+  const { id, name, store, processing = false, onRemove, onSuccess, onError } = props;
 
-  const { data: file, error: fileError } = useQuery({
+  const { data: file, isLoading: loadingFileInfo, error: fileError } = useQuery({
     queryKey: ['file', id],
     queryFn: async () => {
       const { data: response, error: reqError } = await tryCatch(
@@ -105,6 +105,8 @@ export function DbFileCard(props: DbFileCardProps) {
       if (reqError) throw reqError;
 
       if (!response.ok || response.status === 400) {
+        onRemove(id);
+        removeFile(store, id);
         throw new Error(`File ${id} does not exist.`);
       }
 
@@ -115,7 +117,7 @@ export function DbFileCard(props: DbFileCardProps) {
     refetchOnWindowFocus: false,
   });
 
-  const { data: meta, isLoading } = useQuery({
+  const { data: meta, isLoading: isLoadingMeta } = useQuery({
     queryKey: ['file', id, 'meta'],
     queryFn: async () => {
       const { data: response, error: reqError } = await tryCatch(
@@ -151,7 +153,7 @@ export function DbFileCard(props: DbFileCardProps) {
 
       return (await response.json()) as { fileId: string; status: string, error: string | null };
     },
-    enabled: !!file && (processing || processed),
+    enabled: !!file && processing,
     refetchInterval: processing ? 1000 : undefined,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
@@ -177,19 +179,22 @@ export function DbFileCard(props: DbFileCardProps) {
   })
 
   useEffect(() => {
-    if (processing && status?.status !== 'processing') {
-      onSuccess(id);
+    if (processing && status?.status === 'completed') {
+      onSuccess?.(id);
       markFileAsProcessed(store, id);
+    }
+
+    if (processing && status?.status === 'failed') {
+      onError?.(id);
+      markFileAsFailed(store, id);
     }
     // the onSuccess function doesn't need to be a dependency
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, processing, id]);
 
   const metadata = file?.metadata ?? meta;
+  const isLoading = loadingFileInfo || isLoadingMeta;
   const error = fileError?.message ?? status?.error;
-
-  console.log('statusError', status?.error);
-  console.log('status', status);
 
   if (error) {
     return (
