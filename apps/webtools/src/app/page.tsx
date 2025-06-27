@@ -24,9 +24,9 @@ export default async function Home() {
         <div data-el="tools" className="relative mx-auto grid gap-4 md:gap-1 max-w-4xl sm:grid-cols-2 lg:grid-cols-3">
           <Toolbox title="Trim" description="Trim video & audio files lengths" icon={<ScissorsLineDashedIcon className="size-4" />} comingSoon />
           <Toolbox title="Scale" description="Change the scale & aspect ration of video files" icon={<ExpandIcon className="size-4" />} comingSoon />
-          <Toolbox title="Change formats" description="Transcode video files to other formats" icon={<Settings2Icon className="size-4" />} comingSoon />
-          <Toolbox link="/extract-audio" title="Extract audio" description="Extract audio from video files" icon={<FileAudioIcon className="size-4" />} />
-          <Toolbox title="Remove audio" description="Remove the audio from video files" icon={<VolumeOffIcon className="size-4" />} comingSoon />
+          <Toolbox link="/transcode" title="Change formats" description="Transcode video files to other formats" icon={<Settings2Icon className="size-4" />} />
+          <Toolbox link="/extract-audio" title="Extract audio" description="Extract the audio track from video files" icon={<FileAudioIcon className="size-4" />} />
+          <Toolbox link="/remove-audio" title="Remove audio" description="Remove the audio track from video files" icon={<VolumeOffIcon className="size-4" />} />
           <Toolbox title="Extract thumbnail" description="Select and extract any frame as thumbnail" icon={<ImagePlusIcon className="size-4" />} comingSoon />
         </div>
 

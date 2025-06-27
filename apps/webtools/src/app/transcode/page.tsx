@@ -15,7 +15,7 @@ import FileUploadCard from '@/components/file-upload';
 import UploadButton from '@/components/upload-button';
 import { DbFileCard, UploadFileCard } from '@/components/file-card';
 
-export default function ExtractAudioPage() {
+export default function TranscodePage() {
   const [localFiles, setLocalFiles] = useState<{ id: string; file: File }[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<StoredFile[]>([]);
 
@@ -34,9 +34,8 @@ export default function ExtractAudioPage() {
           body: JSON.stringify({
             fileIds: pendingFiles.map(f => f.id),
             operation: {
-              type: 'extract-audio',
-              audioFormat: 'mp3',
-              mode: 'replace',
+              type: 'transcode',
+              format: 'mkv',
             },
           })
         })
@@ -50,7 +49,7 @@ export default function ExtractAudioPage() {
       }
 
       for (const file of pendingFiles) {
-        markFileAsProcessing('extract-audio', file.id);
+        markFileAsProcessing('transcode', file.id);
       }
 
       setUploadedFiles(
@@ -93,7 +92,7 @@ export default function ExtractAudioPage() {
   }
 
   useEffect(() => {
-    const storedFiles = retrieveFiles('extract-audio');
+    const storedFiles = retrieveFiles('transcode');
     if (uploadedFiles.length === 0 && storedFiles.length > 0) {
       setUploadedFiles(storedFiles);
     }
@@ -122,9 +121,9 @@ export default function ExtractAudioPage() {
       </div>
       <div className="flex justify-between">
         <div>
-          <h1 className="text-2xl">Extract audio</h1>
+          <h1 className="text-2xl">Change formats</h1>
           <span className="text-muted-foreground text-sm">
-            Upload the source files you want to get the audio from
+            Upload the source files you want to change the format to
           </span>
         </div>
         <RenderIf condition={hasFiles}>
@@ -157,7 +156,7 @@ export default function ExtractAudioPage() {
               <UploadFileCard
                 key={localId}
                 file={file}
-                store="extract-audio"
+                store="transcode"
                 onSuccess={(fileId) => handleUploadFile(localId, fileId, file.name)}
               />
             ))}
@@ -171,7 +170,7 @@ export default function ExtractAudioPage() {
               <DbFileCard
                 {...file}
                 key={file.id}
-                store="extract-audio"
+                store="transcode"
                 onRemove={handleRemoveFile}
               />
             ))}
@@ -186,7 +185,7 @@ export default function ExtractAudioPage() {
                 {...file}
                 processing
                 key={file.id}
-                store="extract-audio"
+                store="transcode"
                 onRemove={handleRemoveFile}
                 onSuccess={handleProcessedFile}
                 onError={handleFailedFile}
@@ -203,7 +202,7 @@ export default function ExtractAudioPage() {
                 {...file}
                 processed
                 key={`${file.id}-processed`}
-                store="extract-audio"
+                store="transcode"
                 onRemove={handleRemoveFile}
               />
             ))}
@@ -217,7 +216,7 @@ export default function ExtractAudioPage() {
               <DbFileCard
                 {...file}
                 key={file.id}
-                store="extract-audio"
+                store="transcode"
                 onRemove={handleRemoveFile}
               />
             ))}
