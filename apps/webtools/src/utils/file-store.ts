@@ -1,10 +1,4 @@
-export type FileStore = 'extract-audio' | 'remove-audio' | 'trim' | 'scale' | 'transcode';
-
-export interface StoredFile {
-  id: string;
-  name: string;
-  status: 'pending' | 'processing' | 'processed' | 'failed';
-}
+import type { FileStore } from '@/types';
 
 export function retrieveFiles(store: FileStore) {
   const localList = retrieveList(store);

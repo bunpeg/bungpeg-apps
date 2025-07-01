@@ -22,7 +22,7 @@ export default async function Home() {
         </div>
 
         <div data-el="tools" className="relative mx-auto grid gap-4 md:gap-1 max-w-4xl sm:grid-cols-2 lg:grid-cols-3">
-          <Toolbox title="Trim" description="Trim video & audio files lengths" icon={<ScissorsLineDashedIcon className="size-4" />} comingSoon />
+          <Toolbox link="/trim" title="Trim" description="Trim video & audio files lengths" icon={<ScissorsLineDashedIcon className="size-4" />} />
           <Toolbox title="Scale" description="Change the scale & aspect ration of video files" icon={<ExpandIcon className="size-4" />} comingSoon />
           <Toolbox link="/transcode" title="Change formats" description="Transcode video files to other formats" icon={<Settings2Icon className="size-4" />} />
           <Toolbox link="/extract-audio" title="Extract audio" description="Extract the audio track from video files" icon={<FileAudioIcon className="size-4" />} />

@@ -11,21 +11,24 @@ import {
   Loader,
   toast,
 } from '@bunpeg/ui';
-import { CloudDownloadIcon, EllipsisVerticalIcon, ExternalLinkIcon, FileVideoIcon, Trash2Icon } from 'lucide-react';
+import {
+  CloudDownloadIcon,
+  EllipsisVerticalIcon,
+  ExternalLinkIcon,
+  FileVideoIcon,
+  Trash2Icon,
+} from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { tryCatch } from '@bunpeg/helpers';
 
 import { env } from '@/env';
-import { appendFile, type FileStore, markFileAsFailed, markFileAsProcessed, removeFile } from '@/utils/file-store';
-
-interface UserFile {
-  id: string;
-  file_name: string;
-  file_path: string;
-  mime_type: string;
-  metadata?: string | null;
-  created_at: string;
-}
+import {
+  appendFile,
+  markFileAsFailed,
+  markFileAsProcessed,
+  removeFile,
+} from '@/utils/file-store';
+import type { FileStore, VideoMeta } from '@/types';
 
 interface UploadFileCardProps {
   file: File;
@@ -36,7 +39,12 @@ export function UploadFileCard(props: UploadFileCardProps) {
   const { file, store, onSuccess } = props;
   const [uploaded, setUploaded] = useState(false);
 
-  const { mutate: upload, isPending, isError: mutationFailed, error: mutationError } = useMutation({
+  const {
+    mutate: upload,
+    isPending,
+    isError: mutationFailed,
+    error: mutationError,
+  } = useMutation({
     mutationFn: async () => {
       const formData = new FormData();
       formData.append('file', file);
@@ -44,7 +52,7 @@ export function UploadFileCard(props: UploadFileCardProps) {
         fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/upload`, {
           method: 'POST',
           body: formData,
-        })
+        }),
       );
 
       if (reqError) throw reqError;
@@ -73,9 +81,7 @@ export function UploadFileCard(props: UploadFileCardProps) {
           </span>
         )}
         {mutationError && (
-          <span className="text-xs text-red-500">
-            {mutationError.message}
-          </span>
+          <span className="text-xs text-red-500">{mutationError.message}</span>
         )}
       </div>
       <Loader size="icon" color="primary" className="ml-auto" />
@@ -94,13 +100,26 @@ interface DbFileCardProps {
   onError?: (fileId: string) => void;
 }
 export function DbFileCard(props: DbFileCardProps) {
-  const { id, name, store, processing = false, processed = false, onRemove, onSuccess, onError } = props;
+  const {
+    id,
+    name,
+    store,
+    processing = false,
+    processed = false,
+    onRemove,
+    onSuccess,
+    onError,
+  } = props;
 
-  const { data: file, isLoading: loadingFileInfo, error: fileError } = useQuery({
+  const {
+    data: file,
+    isLoading: loadingFileInfo,
+    error: fileError,
+  } = useQuery({
     queryKey: processed ? ['file', id, 'processed'] : ['file', id],
     queryFn: async () => {
       const { data: response, error: reqError } = await tryCatch(
-        fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/files/${id}`)
+        fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/files/${id}`),
       );
 
       if (reqError) throw reqError;
@@ -112,7 +131,7 @@ export function DbFileCard(props: DbFileCardProps) {
       }
 
       const data = await response.json();
-      return (data.file) as UserFile;
+      return data.file as UserFile;
     },
     throwOnError: false,
     refetchOnWindowFocus: false,
@@ -122,7 +141,7 @@ export function DbFileCard(props: DbFileCardProps) {
     queryKey: ['file', id, 'meta'],
     queryFn: async () => {
       const { data: response, error: reqError } = await tryCatch(
-        fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/meta/${id}`)
+        fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/meta/${id}`),
       );
 
       if (reqError) throw reqError;
@@ -143,7 +162,7 @@ export function DbFileCard(props: DbFileCardProps) {
     queryKey: ['file', id, 'status'],
     queryFn: async () => {
       const { data: response, error: reqError } = await tryCatch(
-        fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/status/${id}`)
+        fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/status/${id}`),
       );
 
       if (reqError) throw reqError;
@@ -152,19 +171,31 @@ export function DbFileCard(props: DbFileCardProps) {
         throw new Error(`File ${id} does not exist.`);
       }
 
-      return (await response.json()) as { fileId: string; status: string, error: string | null };
+      return (await response.json()) as {
+        fileId: string;
+        status: string;
+        error: string | null;
+      };
     },
     enabled: !!file && processing,
     refetchInterval: processing ? 1000 : undefined,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
-  })
+  });
 
-  const { mutate: deleteFile, isPending: isDeleting } = useMutation<void, Error, string, unknown>({
+  const { mutate: deleteFile, isPending: isDeleting } = useMutation<
+    void,
+    Error,
+    string,
+    unknown
+  >({
     mutationFn: async (fileId) => {
-      const response = await fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/delete/${fileId}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(
+        `${env.NEXT_PUBLIC_BUNPEG_API}/delete/${fileId}`,
+        {
+          method: 'DELETE',
+        },
+      );
 
       if (!response.ok || response.status !== 200) {
         throw new Error('Unable to delete the file');
@@ -176,8 +207,8 @@ export function DbFileCard(props: DbFileCardProps) {
     },
     onError: (err) => {
       toast.error('Failed to delete the file', { description: err.message });
-    }
-  })
+    },
+  });
 
   useEffect(() => {
     if (processing && status?.status === 'completed') {
@@ -203,11 +234,15 @@ export function DbFileCard(props: DbFileCardProps) {
         <FileVideoIcon className="size-5 mt-1" />
         <div className="flex flex-col gap-1">
           <span>{name}</span>
-          <span className="text-xs text-red-500">
-            {error}
-          </span>
+          <span className="text-xs text-red-500">{error}</span>
         </div>
-        <Button variant="ghost" size="xs" className="ml-auto" onClick={() => deleteFile(id)} disabled={isDeleting}>
+        <Button
+          variant="ghost"
+          size="xs"
+          className="ml-auto"
+          onClick={() => deleteFile(id)}
+          disabled={isDeleting}
+        >
           <Trash2Icon className="size-4" />
         </Button>
       </div>
@@ -223,7 +258,9 @@ export function DbFileCard(props: DbFileCardProps) {
           ID: {id} <Stats metadata={metadata ?? null} />
         </span>
       </div>
-      {isLoading || processing ? <Loader size="icon" color="primary" className="ml-auto" /> : null}
+      {isLoading || processing ? (
+        <Loader size="icon" color="primary" className="ml-auto" />
+      ) : null}
       {!isLoading && !processing && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -232,13 +269,19 @@ export function DbFileCard(props: DbFileCardProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent side="bottom" align="end">
-            <a href={`${env.NEXT_PUBLIC_BUNPEG_API}/output/${id}`} target="_blank">
+            <a
+              href={`${env.NEXT_PUBLIC_BUNPEG_API}/output/${id}`}
+              target="_blank"
+            >
               <DropdownMenuItem>
                 <ExternalLinkIcon className="size-4 mr-2" />
                 Preview
               </DropdownMenuItem>
             </a>
-            <a href={`${env.NEXT_PUBLIC_BUNPEG_API}/download/${id}`} target="_blank">
+            <a
+              href={`${env.NEXT_PUBLIC_BUNPEG_API}/download/${id}`}
+              target="_blank"
+            >
               <DropdownMenuItem>
                 <CloudDownloadIcon className="size-4 mr-2" />
                 Download
@@ -247,7 +290,10 @@ export function DbFileCard(props: DbFileCardProps) {
 
             <DropdownMenuSeparator />
 
-            <DropdownMenuItem onClick={() => deleteFile(id)} disabled={isDeleting}>
+            <DropdownMenuItem
+              onClick={() => deleteFile(id)}
+              disabled={isDeleting}
+            >
               <Trash2Icon className="size-4 mr-2" />
               Remove
             </DropdownMenuItem>
@@ -258,15 +304,6 @@ export function DbFileCard(props: DbFileCardProps) {
   );
 }
 
-type VideoMeta = {
-  size: number;
-  duration: number | null;
-  bitrate: number | null;
-  resolution: {
-    width: number | null;
-    height: number | null;
-  }
-}
 function Stats({ metadata }: { metadata: unknown | null }) {
   if (!metadata) return null;
   const meta = metadata as VideoMeta;
