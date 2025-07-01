@@ -1,4 +1,4 @@
-import type { FileStore } from '@/types';
+import type { FileStore, StoredFile } from '@/types';
 
 export function retrieveFiles(store: FileStore) {
   const localList = retrieveList(store);

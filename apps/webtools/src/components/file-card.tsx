@@ -28,7 +28,7 @@ import {
   markFileAsProcessed,
   removeFile,
 } from '@/utils/file-store';
-import type { FileStore, VideoMeta } from '@/types';
+import type { FileStore, UserFile, VideoMeta } from '@/types';
 
 interface UploadFileCardProps {
   file: File;

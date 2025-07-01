@@ -9,7 +9,8 @@ import { nanoid } from 'nanoid';
 import { useMutation } from '@tanstack/react-query';
 
 import { env } from '@/env';
-import { markFileAsProcessing, retrieveFiles, type StoredFile } from '@/utils/file-store';
+import { type StoredFile } from '@/types';
+import { markFileAsProcessing, retrieveFiles } from '@/utils/file-store';
 import { VIDEO_MIME_TYPES } from '@/utils/formats';
 import FileUploadCard from '@/components/file-upload';
 import UploadButton from '@/components/upload-button';
