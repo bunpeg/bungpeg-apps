@@ -58,6 +58,7 @@ export default function TrimPage() {
     variables: localFile,
     isError: mutationFailed,
     error: mutationError,
+    reset: resetUploadMutation,
   } = useMutation<void, Error, File, unknown>({
     mutationFn: async (file) => {
       const formData = new FormData();
@@ -166,6 +167,7 @@ export default function TrimPage() {
     onSuccess: async () => {
       removeFile('trim', file!.id);
       setUploadedFile(null);
+      resetUploadMutation();
     },
     onError: (err) => {
       toast.error('Failed to delete the file', { description: err.message });
@@ -351,7 +353,7 @@ export default function TrimPage() {
             resolve(undefined);
           };
 
-          const onError = (e: Event) => {
+          const onError = () => {
             clearTimeout(timeout);
             video.removeEventListener('seeked', onSeeked);
             video.removeEventListener('error', onError);
@@ -395,7 +397,7 @@ export default function TrimPage() {
             resolve(undefined);
           };
 
-          const onError = (e: Event) => {
+          const onError = () => {
             clearTimeout(timeout);
             video.removeEventListener('seeked', onSeeked);
             video.removeEventListener('error', onError);
@@ -667,7 +669,6 @@ export default function TrimPage() {
                   playsInline
                   preload="meta"
                   ref={videoRef}
-                  src={videoUrl}
                   className="w-full h-full object-contain"
                   onError={handleVideoError}
                   onTimeUpdate={handleTimeUpdate}
@@ -689,7 +690,9 @@ export default function TrimPage() {
                     console.warn('Video suspended, likely due to decode issues');
                     setIsBuffering(false);
                   }}
-                />
+                >
+                  <source src={videoUrl} type={file.mime_type} />
+                </video>
               </div>
 
               {/* Video Controls */}
