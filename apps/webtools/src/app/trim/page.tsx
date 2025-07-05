@@ -14,6 +14,7 @@ import {
   Loader,
   RenderIf,
   Slider,
+  toast,
 } from '@bunpeg/ui';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { ArrowLeftIcon, FileVideoIcon, PauseIcon, PlayIcon, Trash2Icon } from 'lucide-react';
