@@ -13,5 +13,5 @@ export function useDebounce(countDown: number) {
     timerReference.current = setTimeout(callback, countDown) as any;
   }, [countDown]);
 
-  return { timer: timerReference.current, debounceCall };
+  return { timer: timerReference.current, fn: debounceCall };
 }

@@ -33,10 +33,12 @@ export default function TranscodePage() {
         fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/bulk`, {
           method: 'POST',
           body: JSON.stringify({
-            fileIds: pendingFiles.map(f => f.id),
+            file_ids: pendingFiles.map(f => f.id),
             operation: {
               type: 'transcode',
-              format: 'mkv',
+              format: 'mp4',
+              video_codec: 'h264',
+              audio_codec: 'aac',
             },
           })
         })

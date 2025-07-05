@@ -2,14 +2,27 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { Badge, Button, Card, Loader, RenderIf, Slider, toast } from '@bunpeg/ui';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  Loader,
+  RenderIf,
+  Slider,
+} from '@bunpeg/ui';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { ArrowLeftIcon, FileVideoIcon, PauseIcon, PlayIcon, Trash2Icon } from 'lucide-react';
 import { tryCatch } from '@bunpeg/helpers';
+import { useDebounce } from '@bunpeg/ui/hooks';
 
 import { env } from '@/env';
 import type { StoredFile, UserFile, VideoMeta } from '@/types';
-import { appendFile, retrieveFiles } from '@/utils/file-store';
+import { appendFile, removeFile, retrieveFiles } from '@/utils/file-store';
 import { VIDEO_MIME_TYPES } from '@/utils/formats';
 import FileUploadCard from '@/components/file-upload';
 
@@ -21,7 +34,6 @@ interface TrimSegment {
 }
 
 export default function TrimPage() {
-  // const [localFile, setLocalFile] = useState<{ id: string; file: File } | null>(null);
   const [uploadedFile, setUploadedFile] = useState<StoredFile | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -33,6 +45,9 @@ export default function TrimPage() {
   const [isBuffering, setIsBuffering] = useState(false);
   const [isSeeking, setIsSeeking] = useState(false);
   const [bufferedRanges, setBufferedRanges] = useState<{ start: number; end: number }[]>([]);
+  const [lastSeekTime, setLastSeekTime] = useState(0);
+  const [videoErrorDialogOpen, setVideoErrorDialogOpen] = useState(false);
+  const [videoErrorDetails, setVideoErrorDetails] = useState<any>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -129,6 +144,33 @@ export default function TrimPage() {
     refetchOnWindowFocus: false,
   });
 
+  const { mutate: deleteFile, isPending: isDeleting } = useMutation<
+    void,
+    Error,
+    string,
+    unknown
+  >({
+    mutationFn: async (fileId) => {
+      const response = await fetch(
+        `${env.NEXT_PUBLIC_BUNPEG_API}/delete/${fileId}`,
+        {
+          method: 'DELETE',
+        },
+      );
+
+      if (!response.ok || response.status !== 200) {
+        throw new Error('Unable to delete the file');
+      }
+    },
+    onSuccess: async () => {
+      removeFile('trim', file!.id);
+      setUploadedFile(null);
+    },
+    onError: (err) => {
+      toast.error('Failed to delete the file', { description: err.message });
+    },
+  });
+
   const handleLocalFileUpload = async (files: File[]) => {
     const file = files[0];
     if (!file) return;
@@ -203,22 +245,21 @@ export default function TrimPage() {
     // Handle specific decode errors with detailed guidance
     if (video.error?.message?.includes('PIPELINE_ERROR_DECODE')) {
       errorMessage =
-        'Video decoding failed due to corrupted or incompatible video data.';
+        'Video decoding failed during seeking. This usually happens when seeking to non-keyframe positions.';
       suggestions = [
-        'Re-encode the video with these recommended settings:',
-        '• Video: H.264 codec, CRF 23, Medium preset',
-        '• Audio: AAC codec, 128-192 kbps',
-        '• Container: MP4',
-        '• Frame rate: 24, 25, or 30 fps',
-        '',
-        'Tools you can use:',
-        '• HandBrake (free, user-friendly)',
-        '• FFmpeg (command-line)',
-        '• Online converters (for smaller files)',
+        'This is often caused by seeking to positions without keyframes.',
+        'Try these solutions:',
+        '• Reload the video and try seeking to different positions',
+        '• Use smaller seek increments (avoid large jumps)',
+        '• Re-encode the video with more frequent keyframes:',
+        '  - Video: H.264 codec, GOP size 30 or less',
+        '  - Audio: AAC codec, 128-192 kbps',
+        '  - Container: MP4',
+        '  - Use constant frame rate',
       ];
     }
 
-    console.error('Video error details:', {
+    const errorDetails = {
       code: video.error?.code,
       message: video.error?.message,
       networkState: video.networkState,
@@ -226,10 +267,16 @@ export default function TrimPage() {
       src: video.src?.substring(0, 50) + '...',
       currentTime: video.currentTime,
       duration: video.duration,
-    });
+      bufferedRanges: bufferedRanges.length,
+      wasSeekingWhenErrorOccurred: isSeeking,
+    };
 
     setVideoError({ message: errorMessage, suggestions });
+    setVideoErrorDetails(errorDetails);
+    setVideoErrorDialogOpen(true);
     setIsPlaying(false);
+    setIsSeeking(false);
+    setIsBuffering(false);
   };
 
   const togglePlayPause = async () => {
@@ -256,7 +303,8 @@ export default function TrimPage() {
     }
   };
 
-  const handleSeek = async (value: number[]) => {
+  const debounce = useDebounce(300);
+  const handleSeek = (value: number[]) => {
     const targetTime = value[0];
 
     if (
@@ -268,38 +316,32 @@ export default function TrimPage() {
       return;
     }
 
-    const video = videoRef.current;
-
-    // Check if target time is within buffered ranges
-    const isBuffered = bufferedRanges.some(
-      (range) => targetTime >= range.start && targetTime <= range.end,
-    );
-
-    setIsSeeking(true);
     setCurrentTime(targetTime); // Update UI immediately for responsiveness
+    debounce.fn(() => void seekNewVideoPosition(targetTime));
+  }
+
+  const seekNewVideoPosition = async (targetTime: number) => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Throttle seeking to prevent rapid seeks that can cause decode errors
+    const now = Date.now();
+    if (now - lastSeekTime < 200) { // Minimum 200ms between seeks
+      return;
+    }
+    setLastSeekTime(now);
+    setIsSeeking(true);
 
     try {
-      if (isBuffered || Math.abs(targetTime - video.currentTime) < 5) {
-        // Direct seek for small jumps or buffered content
-        video.currentTime = targetTime;
-      } else {
-        // Progressive seek for large jumps to unbuffered content
-        setIsBuffering(true);
-
-        // Pause video during seeking
-        const wasPlaying = !video.paused;
-        if (wasPlaying) {
-          video.pause();
-        }
-
-        // Set target time
-        video.currentTime = targetTime;
+      // Strategy 1: Use fastSeek for approximate seeking (keyframe-aligned)
+      if (typeof video.fastSeek === 'function') {
+        video.fastSeek(targetTime);
 
         // Wait for seek to complete
         await new Promise((resolve, reject) => {
           const timeout = setTimeout(() => {
-            reject(new Error('Seek timeout'));
-          }, 10000); // 10 second timeout
+            reject(new Error('FastSeek timeout'));
+          }, 5000);
 
           const onSeeked = () => {
             clearTimeout(timeout);
@@ -308,15 +350,69 @@ export default function TrimPage() {
             resolve(undefined);
           };
 
-          const onError = () => {
+          const onError = (e: Event) => {
             clearTimeout(timeout);
             video.removeEventListener('seeked', onSeeked);
             video.removeEventListener('error', onError);
-            reject(new Error('Seek failed'));
+            reject(new Error('FastSeek failed'));
           };
 
           video.addEventListener('seeked', onSeeked);
           video.addEventListener('error', onError);
+        });
+      } else {
+        // Strategy 2: Conservative seeking with keyframe alignment
+        const wasPlaying = !video.paused;
+        if (wasPlaying) {
+          video.pause();
+        }
+
+        // For small seeks (< 5 seconds), try direct seek
+        if (Math.abs(targetTime - video.currentTime) < 5) {
+          video.currentTime = targetTime;
+        } else {
+          // For large seeks, use a more conservative approach
+          // Seek to a slightly earlier time to increase chance of hitting a keyframe
+          const seekTolerance = 0.5; // 500ms tolerance
+          const conservativeTarget = Math.max(0, targetTime - seekTolerance);
+
+          setIsBuffering(true);
+          video.currentTime = conservativeTarget;
+        }
+
+        // Wait for seek to complete
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Seek timeout'));
+          }, 10000);
+
+          const onSeeked = () => {
+            clearTimeout(timeout);
+            video.removeEventListener('seeked', onSeeked);
+            video.removeEventListener('error', onError);
+            video.removeEventListener('stalled', onStalled);
+            resolve(undefined);
+          };
+
+          const onError = (e: Event) => {
+            clearTimeout(timeout);
+            video.removeEventListener('seeked', onSeeked);
+            video.removeEventListener('error', onError);
+            video.removeEventListener('stalled', onStalled);
+            reject(new Error('Seek failed'));
+          };
+
+          const onStalled = () => {
+            clearTimeout(timeout);
+            video.removeEventListener('seeked', onSeeked);
+            video.removeEventListener('error', onError);
+            video.removeEventListener('stalled', onStalled);
+            reject(new Error('Seek stalled'));
+          };
+
+          video.addEventListener('seeked', onSeeked);
+          video.addEventListener('error', onError);
+          video.addEventListener('stalled', onStalled);
         });
 
         // Resume playback if it was playing
@@ -330,21 +426,43 @@ export default function TrimPage() {
       }
     } catch (error) {
       console.error('Seek error:', error);
-      // Fallback: try to seek to a nearby buffered position
-      const nearestBuffered = bufferedRanges.find(
-        (range) =>
-          Math.abs(range.start - targetTime) < 10 ||
-          Math.abs(range.end - targetTime) < 10,
-      );
 
-      if (nearestBuffered) {
-        const fallbackTime =
-          Math.abs(nearestBuffered.start - targetTime) <
-            Math.abs(nearestBuffered.end - targetTime)
-            ? nearestBuffered.start
-            : nearestBuffered.end;
-        video.currentTime = fallbackTime;
-        setCurrentTime(fallbackTime);
+      // Fallback strategy: Progressive seeking with smaller increments
+      try {
+        const video = videoRef.current;
+        if (!video) return;
+
+        setIsBuffering(true);
+
+        // Try seeking to nearby buffered positions first
+        const nearestBuffered = bufferedRanges.find(
+          (range) =>
+            Math.abs(range.start - targetTime) < 10 ||
+            Math.abs(range.end - targetTime) < 10,
+        );
+
+        if (nearestBuffered) {
+          const fallbackTime =
+            Math.abs(nearestBuffered.start - targetTime) <
+              Math.abs(nearestBuffered.end - targetTime)
+              ? nearestBuffered.start
+              : nearestBuffered.end;
+          video.currentTime = fallbackTime;
+          setCurrentTime(fallbackTime);
+        } else {
+          // Last resort: seek to the nearest 5-second mark (more likely to be a keyframe)
+          const alignedTime = Math.round(targetTime / 5) * 5;
+          const safeTarget = Math.max(0, Math.min(duration, alignedTime));
+          video.currentTime = safeTarget;
+          setCurrentTime(safeTarget);
+        }
+      } catch (fallbackError) {
+        console.error('Fallback seek also failed:', fallbackError);
+        // Reset to a safe position
+        if (videoRef.current) {
+          videoRef.current.currentTime = 0;
+          setCurrentTime(0);
+        }
       }
     } finally {
       setIsBuffering(false);
@@ -352,14 +470,40 @@ export default function TrimPage() {
     }
   };
 
-  const handleTimelineMouseDown = (e: React.MouseEvent) => {
+  const handleTimelineClick = async (e: React.MouseEvent) => {
+    // Only handle direct clicks, not drag operations
+    if (isDragging || dragStart !== null || dragCurrent !== null) return;
+
+    // Prevent if we're already seeking or buffering
+    if (isSeeking || isBuffering) return;
+
     e.preventDefault();
+    e.stopPropagation();
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = Math.max(0, Math.min(1, x / rect.width));
+    const targetTime = percentage * duration;
+
+    // Only seek if the click is meaningful (not too close to current position)
+    if (Math.abs(targetTime - currentTime) < 0.5) return;
+
+    // Use the improved seek function
+    handleSeek([targetTime]);
+  };
+
+  const handleTimelineMouseDown = (e: React.MouseEvent) => {
+    // Prevent seeking if we're already in a seeking state
+    if (isSeeking || isBuffering) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const percentage = Math.max(0, Math.min(1, x / rect.width));
     const time = percentage * duration;
 
-    console.log('Mouse down - starting drag at:', time);
     setDragStart(time);
     setDragCurrent(time);
     setIsDragging(true);
@@ -373,8 +517,6 @@ export default function TrimPage() {
     const x = e.clientX - rect.left;
     const percentage = Math.max(0, Math.min(1, x / rect.width));
     const time = percentage * duration;
-
-    console.log('Mouse move - updating drag to:', time);
     setDragCurrent(time);
   };
 
@@ -389,8 +531,6 @@ export default function TrimPage() {
 
     const start = Math.min(dragStart, time);
     const end = Math.max(dragStart, time);
-
-    console.log('Mouse up - creating segment:', start, 'to', end);
 
     if (end - start > 0.5) {
       const newSegment: TrimSegment = {
@@ -409,7 +549,6 @@ export default function TrimPage() {
   };
 
   const handleTimelineMouseLeave = () => {
-    console.log('Mouse leave - canceling drag');
     setDragStart(null);
     setDragCurrent(null);
     setIsDragging(false);
@@ -418,6 +557,8 @@ export default function TrimPage() {
   const handleVideoLoad = () => {
     if (videoRef.current) {
       setVideoError(null);
+      setVideoErrorDialogOpen(false);
+      setVideoErrorDetails(null);
       updateBufferedRanges(); // Initialize buffered ranges
     }
   };
@@ -492,35 +633,35 @@ export default function TrimPage() {
         {file && videoUrl ? (
           <div className="space-y-6">
             {/* Uploaded File Info */}
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <PlayIcon className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-gray-900">
-                      {file.file_name}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      ID: {file.id}
-                      {meta ? (
-                        <>
-                          | size: {meta.size / 1024 / 1024} |
-                          duration: {duration.toFixed(2)} | res:{' '}
-                          {meta.resolution.width}x{meta.resolution.height}
-                        </>
-                      ) : null}
-                    </p>
-                  </div>
-                </div>
-                <Badge variant="secondary">Uploaded</Badge>
+            <div className="border flex gap-2 p-4">
+              <FileVideoIcon className="size-5 mt-1" />
+              <div className="flex flex-col gap-1">
+                <span className="tex-sm">{file.file_name}</span>
+                <span className="text-sm text-gray-500">
+                  ID: {file.id}
+                  {meta ? (
+                    <>
+                      | size: {meta.size / 1024 / 1024} |
+                      duration: {duration.toFixed(2)} | res:{' '}
+                      {meta.resolution.width}x{meta.resolution.height}
+                    </>
+                  ) : null}
+                </span>
               </div>
-            </Card>
+              <Button
+                variant="ghost"
+                size="xs"
+                className="ml-auto"
+                onClick={() => deleteFile(file.id)}
+                disabled={isDeleting}
+              >
+                <Trash2Icon className="size-4" />
+              </Button>
+            </div>
 
             {/* Video Preview */}
-            <Card className="p-6">
-              <div className="aspect-video bg-black rounded-lg overflow-hidden mb-4">
+            <>
+              <div className="aspect-video bg-black overflow-hidden mb-4">
                 <video
                   playsInline
                   preload="meta"
@@ -539,81 +680,28 @@ export default function TrimPage() {
                   onCanPlay={() => setIsBuffering(false)}
                   onSeeking={() => setIsSeeking(true)}
                   onSeeked={() => setIsSeeking(false)}
+                  onStalled={() => {
+                    console.warn('Video stalled during playback');
+                    setIsBuffering(true);
+                  }}
+                  onSuspend={() => {
+                    console.warn('Video suspended, likely due to decode issues');
+                    setIsBuffering(false);
+                  }}
                 />
-                {videoError && (
-                  <div className="absolute inset-0 bg-black bg-opacity-90 flex items-center justify-center p-4">
-                    <div className="text-center text-white max-w-lg">
-                      <div className="text-red-400 mb-3 text-lg">
-                        ⚠️ Video Error
-                      </div>
-                      <div className="text-sm leading-relaxed mb-4">
-                        {videoError.message}
-                      </div>
-
-                      {videoError.suggestions && videoError.suggestions.length > 0 && (
-                        <div className="text-left bg-gray-800 p-4 rounded-lg mb-4 text-xs">
-                          <div className="font-semibold mb-2 text-yellow-400">
-                            Suggested Solutions:
-                          </div>
-                          {videoError.suggestions.map((suggestion, index) => (
-                            <div
-                              key={index}
-                              className={
-                                suggestion.startsWith('•')
-                                  ? 'ml-2 text-gray-300'
-                                  : 'text-white'
-                              }
-                            >
-                              {suggestion || <br />}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      <div className="space-y-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-black bg-white hover:bg-gray-100"
-                          onClick={() => {
-                            setVideoError(null);
-                            if (videoRef.current) {
-                              videoRef.current.load();
-                            }
-                          }}
-                        >
-                          Try Again
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-black bg-white hover:bg-gray-100 ml-2"
-                          onClick={() => {
-                            setUploadedFile(null);
-                            setVideoError(null);
-                            setSegments([]);
-                            setCurrentTime(0);
-                          }}
-                        >
-                          Upload Different Video
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Video Controls */}
-              <div className="flex items-center gap-4 mb-4">
+              <div className="flex items-center justify-between gap-4 mb-4">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={togglePlayPause}
                   disabled={!!videoError || isBuffering || isSeeking}
-                  className="flex items-center gap-2 bg-transparent"
+                  className="flex items-center gap-2 bg-transparent w-40"
                 >
                   {isBuffering || isSeeking ? (
-                    <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+                    <Loader size="icon" color="primary" />
                   ) : isPlaying ? (
                     <PauseIcon className="w-4 h-4" />
                   ) : (
@@ -630,9 +718,6 @@ export default function TrimPage() {
                 <span className="text-sm text-gray-500">
                   {formatTime(currentTime)} / {formatTime(duration)}
                 </span>
-                {videoError && (
-                  <span className="text-sm text-red-500">Video Error</span>
-                )}
               </div>
 
               {/* Timeline Slider */}
@@ -644,7 +729,7 @@ export default function TrimPage() {
                     max={duration}
                     step={0.1}
                     className="w-full"
-                    disabled={isSeeking}
+                    disabled={isSeeking || isBuffering}
                   />
 
                   {/* Buffered ranges visualization */}
@@ -666,27 +751,18 @@ export default function TrimPage() {
                     <div className="absolute top-0 left-0 right-0 h-2 bg-blue-200 rounded animate-pulse" />
                   )}
                 </div>
-
-                {(isBuffering || isSeeking) && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    {isBuffering ? 'Buffering...' : 'Seeking...'}
-                  </p>
-                )}
               </div>
 
               {/* Timeline for Segment Selection */}
               <div className="space-y-4">
-                <h3 className="font-medium text-gray-900">
-                  Timeline - Click and drag to mark segments for deletion
-                </h3>
-
                 <div
-                  className="relative h-16 bg-gray-200 rounded-lg select-none"
-                  style={{ cursor: isDragging ? 'grabbing' : 'crosshair' }}
+                  className="relative h-16 bg-gray-200 select-none"
+                  style={{ cursor: isDragging ? 'grabbing' : isSeeking ? 'wait' : 'crosshair' }}
                   onMouseDown={handleTimelineMouseDown}
                   onMouseMove={handleTimelineMouseMove}
                   onMouseUp={handleTimelineMouseUp}
                   onMouseLeave={handleTimelineMouseLeave}
+                  onClick={handleTimelineClick}
                 >
                   {/* Current time indicator */}
                   <div
@@ -719,54 +795,22 @@ export default function TrimPage() {
                   {segments.map((segment) => (
                     <div
                       key={segment.id}
-                      className="absolute top-2 bottom-2 bg-red-500 bg-opacity-60 border border-red-600 rounded flex items-center justify-center group z-10"
+                      className="absolute cursor-default top-2 bottom-2 bg-red-500 bg-opacity-60 border border-red-600 rounded flex items-center justify-center group z-10"
                       style={{
                         left: `${duration > 0 ? (segment.start / duration) * 100 : 0}%`,
                         width: `${duration > 0 ? ((segment.end - segment.start) / duration) * 100 : 0}%`,
                       }}
                     >
                       <Button
-                        variant="ghost"
+                        variant="link"
                         size="sm"
                         onClick={() => removeSegment(segment.id)}
                         className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto"
                       >
-                        <Trash2Icon className="w-3 h-3 text-red-700" />
+                        <Trash2Icon className="size-4 text-background" />
                       </Button>
                     </div>
                   ))}
-                </div>
-
-                {/* Drag feedback */}
-                {isDragging && dragStart !== null && dragCurrent !== null && (
-                  <div className="text-sm text-gray-600 bg-blue-50 p-2 rounded-lg border border-blue-200">
-                    <div className="flex items-center gap-2">
-                      <span>Creating segment:</span>
-                      <span className="font-mono">
-                        {formatTime(Math.min(dragStart, dragCurrent))} -{' '}
-                        {formatTime(Math.max(dragStart, dragCurrent))}
-                      </span>
-                      <span className="text-blue-600">
-                        (Duration:{' '}
-                        {formatTime(Math.abs(dragCurrent - dragStart))})
-                      </span>
-                      {Math.abs(dragCurrent - dragStart) < 0.5 && (
-                        <span className="text-orange-600">
-                          ⚠️ Minimum 0.5s required
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Enhanced debug info */}
-                <div className="text-xs text-gray-500 bg-gray-100 p-2 rounded">
-                  <div>Debug Info:</div>
-                  <div>isDragging: {isDragging.toString()}</div>
-                  <div>dragStart: {dragStart?.toFixed(2) || 'null'}</div>
-                  <div>dragCurrent: {dragCurrent?.toFixed(2) || 'null'}</div>
-                  <div>duration: {duration.toFixed(2)}</div>
-                  <div>segments: {segments.length}</div>
                 </div>
 
                 {/* Segment List */}
@@ -798,10 +842,81 @@ export default function TrimPage() {
                   </div>
                 )}
               </div>
-            </Card>
+            </>
           </div>
         ) : null}
       </div>
+
+      {/* Video Error Dialog */}
+      <AlertDialog
+        open={videoErrorDialogOpen}
+        onOpenChange={setVideoErrorDialogOpen}
+      >
+        <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col overflow-y-auto">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              ⚠️ Video Error
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {videoError?.message}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-4">
+            {videoError?.suggestions && videoError.suggestions.length > 0 && (
+              <div className="bg-yellow-50 p-4 border border-yellow-200">
+                <div className="font-semibold mb-2 text-yellow-800">
+                  Suggested Solutions:
+                </div>
+                <div className="text-sm text-yellow-700 space-y-1">
+                  {videoError.suggestions.map((suggestion, index) => (
+                    <div
+                      key={index}
+                      className={
+                        suggestion.startsWith('•')
+                          ? 'ml-4 text-yellow-600'
+                          : 'font-medium'
+                      }
+                    >
+                      {suggestion || <br />}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {videoErrorDetails && (
+              <div className="bg-gray-50 p-4 border">
+                <div className="font-semibold mb-2 text-gray-800">
+                  Technical Details:
+                </div>
+                <pre className="text-xs bg-gray-900 text-green-400 p-3 font-mono overflow-x-auto">
+                  <code>{JSON.stringify(videoErrorDetails, null, 2)}</code>
+                </pre>
+              </div>
+            )}
+
+            <AlertDialogFooter className="flex gap-2 pt-4">
+              <AlertDialogAction
+                variant="black"
+                onClick={() => {
+                  setVideoError(null);
+                  setVideoErrorDetails(null);
+                  setVideoErrorDialogOpen(false);
+                  setCurrentTime(0);
+                  setIsSeeking(false);
+                  setIsBuffering(false);
+                  if (videoRef.current) {
+                    videoRef.current.currentTime = 0;
+                    videoRef.current.load();
+                  }
+                }}
+              >
+                Reload Video
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }
@@ -881,13 +996,19 @@ const validateVideoFile = async (
         resolve({
           isValid: false,
           error:
-            'This video file has encoding issues that prevent playback. Please try:\n\n• Re-encoding with standard settings (H.264 video, AAC audio, MP4 container)\n• Using a different video file\n• Converting with a tool like HandBrake or FFmpeg\n\nRecommended settings:\n• Video: H.264, CRF 23, Medium preset\n• Audio: AAC, 128kbps\n• Container: MP4',
+            `This video file has encoding issues that prevent playback. Please try:\n\n
+            • Re-encoding with standard settings (H.264 video, AAC audio, MP4 container)\n
+            • Using a different video file\n
+            • Converting with a tool like HandBrake or FFmpeg\n\nRecommended settings:\n
+            • Video: H.264, CRF 23, Medium preset\n• Audio: AAC, 128kbps\n
+            • Container: MP4`,
         });
       } else {
         resolve({
           isValid: false,
           error:
-            'Video file appears to be corrupted or uses an unsupported codec. Please try a different video file or re-encode it with standard settings.',
+            `Video file appears to be corrupted or uses an unsupported codec.
+            Please try a different video file or re-encode it with standard settings.`,
         });
       }
     };
