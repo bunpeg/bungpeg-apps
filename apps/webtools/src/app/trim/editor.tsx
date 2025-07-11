@@ -3,19 +3,11 @@
 import dynamic from 'next/dynamic';
 import { tryCatch } from '@bunpeg/helpers';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { FileVideoIcon, PauseIcon, PlayIcon, Trash2Icon } from 'lucide-react';
+import { FileVideoIcon, Trash2Icon } from 'lucide-react';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
   Button,
   Loader,
   RenderIf,
-  Slider,
   toast,
 } from '@bunpeg/ui';
 import { useRef, useState } from 'react';
@@ -305,6 +297,7 @@ export default function Editor(props: Props) {
         src={buildCdnUrl(fileId)}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
+        onTimeUpdate={(e) => setCurrentTime((e.target as HTMLVideoElement).currentTime)}
       />
 
       {/* Video Controls */}
@@ -324,7 +317,7 @@ export default function Editor(props: Props) {
       </div> */}
 
       {/* Timeline for Segment Selection */}
-      <div className="space-y-4 mt-2">
+      <div className="space-y-4 mt-2 px-4">
         <div
           className="relative h-16 bg-gray-200 select-none"
           style={{ cursor: isDragging ? 'grabbing' : 'pointer' }}
@@ -333,6 +326,12 @@ export default function Editor(props: Props) {
           onMouseUp={handleTimelineMouseUp}
           onMouseLeave={handleTimelineMouseLeave}
           onClick={handleTimelineClick}
+          role="slider"
+          aria-label="Video timeline"
+          aria-valuemin={0}
+          aria-valuemax={duration}
+          aria-valuenow={currentTime}
+          tabIndex={0}
         >
           {/* Current time indicator */}
           <div
