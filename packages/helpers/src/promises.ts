@@ -22,3 +22,30 @@ export async function tryCatch<T, E = Error>(
     return { data: null, error: error as E };
   }
 }
+
+/**
+ * Delay function: Cause an artificial delay in the execution of the code
+ * @param time in milliseconds
+ */
+export const delay = (time: number) =>
+  new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(undefined);
+    }, time);
+  });
+
+export const poll = <T = any>(
+  fn: () => Promise<T>,
+  timeoutBetweenAttempts = 5000,
+  retries = Number.POSITIVE_INFINITY,
+): Promise<T> => {
+  return Promise.resolve()
+    .then(fn)
+    .catch(function retry(err): Promise<T> {
+      // biome-ignore lint/style/noParameterAssign:
+      if (retries-- > 0) {
+        return delay(timeoutBetweenAttempts).then(fn).catch(retry);
+      }
+      throw err;
+    });
+}

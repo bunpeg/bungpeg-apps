@@ -1,0 +1,53 @@
+import React, { useRef, useEffect } from 'react';
+import * as dashjs from 'dashjs';
+import { cn } from '@bunpeg/ui';
+
+type Props = Omit<React.ComponentProps<'video'>, 'src'> & { src: string };
+
+const DashVideoPlayer = ({ src, ref: externalRef, className, ...rest }: Props) => {
+  const playerRef = useRef<dashjs.MediaPlayerClass | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    if (videoRef.current && !playerRef.current) {
+      console.log('Initializing dash.js player...');
+      playerRef.current = dashjs.MediaPlayer().create();
+
+      playerRef.current.initialize(videoRef.current, src, true); // true for autoPlay
+
+      playerRef.current.on(dashjs.MediaPlayer.events.ERROR, (event) => {
+        console.error('Dash.js error:', event);
+      });
+
+      playerRef.current.on(dashjs.MediaPlayer.events.PLAYBACK_STARTED, () => {
+        console.log('Playback started');
+      });
+
+      playerRef.current.on(dashjs.MediaPlayer.events.PLAYBACK_PAUSED, () => {
+        console.log('Playback paused');
+      });
+
+      if (externalRef) {
+        if (typeof externalRef === 'function') {
+          externalRef(videoRef.current);
+        } else {
+          externalRef.current = videoRef.current;
+        }
+      }
+    }
+
+    return () => {
+      if (playerRef.current) {
+        console.log('Resetting dash.js player...');
+        playerRef.current.reset();
+        playerRef.current = null;
+      }
+    };
+  }, [src, videoRef, externalRef]);
+
+  return (
+    <video ref={videoRef} controls className={cn('aspect-video w-full', className)} {...rest} />
+  );
+};
+
+export default DashVideoPlayer;
