@@ -300,7 +300,7 @@ export default function Editor(props: Props) {
       </div>
 
       <DynamicDashVideoPlayer
-        playsInline
+        controls
         ref={videoRef}
         src={buildCdnUrl(fileId)}
         onPlay={() => setIsPlaying(true)}
@@ -308,7 +308,7 @@ export default function Editor(props: Props) {
       />
 
       {/* Video Controls */}
-      <div className="flex items-center justify-between gap-4 mb-4">
+      {/* <div className="flex items-center justify-between gap-4 mb-4">
         <Button
           variant="outline"
           size="sm"
@@ -321,23 +321,10 @@ export default function Editor(props: Props) {
         <span className="text-sm text-gray-500">
           {formatTime(currentTime)} / {formatTime(duration)}
         </span>
-      </div>
-
-      {/* Timeline Slider */}
-      {/* <div className="mb-4">
-        <div className="relative">
-          <Slider
-            onValueChange={handleSeek}
-            value={[currentTime]}
-            className="w-full"
-            max={duration}
-            step={0.1}
-          />
-        </div>
       </div> */}
 
       {/* Timeline for Segment Selection */}
-      <div className="space-y-4">
+      <div className="space-y-4 mt-2">
         <div
           className="relative h-16 bg-gray-200 select-none"
           style={{ cursor: isDragging ? 'grabbing' : 'pointer' }}
