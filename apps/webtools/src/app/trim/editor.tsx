@@ -562,100 +562,77 @@ export default function Editor(props: Props) {
             ) : null}
 
             {/* Existing segments */}
-            {segments.map((segment) => (
-              <div
-                key={segment.id}
-                className={cn(
-                  `absolute top-0 bottom-0 border flex items-center justify-center group z-20`,
-                  dragState.segmentId === segment.id
-                    ? 'bg-primary/70 border-primary border-2'
-                    : 'bg-primary/60 border-primary'
-                )}
-                style={{
-                  left: `${duration > 0 ? (segment.start / duration) * 100 : 0}%`,
-                  width: `${duration > 0 ? Math.max(1, ((segment.end - segment.start) / duration) * 100) : 0}%`,
-                }}
-                onMouseEnter={() => setHoveredSegment(segment.id)}
-                onMouseLeave={() => setHoveredSegment(null)}
-              >
-                {/* Start resize handle */}
+            {segments.map((segment) => {
+              const isDragging = dragState.segmentId === segment.id;
+              return (
                 <div
+                  key={segment.id}
                   className={cn(
-                    `absolute left-0 top-0 bottom-0 w-2 bg-primary/70 cursor-w-resize opacity-0 group-hover:opacity-100 hover:bg-primary hover:w-3 transition-all z-30 flex items-center justify-center`,
-                    dragState.type === 'resize-start' && dragState.segmentId === segment.id ? '!opacity-100' : ''
+                    `absolute top-0 bottom-0 border flex items-center justify-center group z-20`,
+                    dragState.segmentId === segment.id
+                      ? 'bg-primary/70 border-primary border-2'
+                      : 'bg-primary/60 border-primary'
                   )}
-                  onMouseDown={handleSegmentResizeStart(segment.id, 'start')}
-                  title="Drag to adjust start time (prevents overlap)"
+                  style={{
+                    left: `${duration > 0 ? (segment.start / duration) * 100 : 0}%`,
+                    width: `${duration > 0 ? Math.max(1, ((segment.end - segment.start) / duration) * 100) : 0}%`,
+                  }}
+                  onMouseEnter={() => setHoveredSegment(segment.id)}
+                  onMouseLeave={() => setHoveredSegment(null)}
                 >
-                  <div className="w-px h-4 bg-white opacity-80"></div>
-                </div>
-
-                {/* End resize handle */}
-                <div
-                  className={cn(
-                    `absolute right-0 top-0 bottom-0 w-2 bg-primary/70 cursor-e-resize opacity-0 group-hover:opacity-100 hover:bg-primary hover:w-3 transition-all z-30 flex items-center justify-center`,
-                    dragState.type === 'resize-end' && dragState.segmentId === segment.id ? 'opacity-100' : ''
-                  )}
-                  onMouseDown={handleSegmentResizeStart(segment.id, 'end')}
-                  title="Drag to adjust end time (prevents overlap)"
-                >
-                  <div className="w-px h-4 bg-white opacity-80"></div>
-                </div>
-
-                {/* Segment content */}
-                <div className="flex items-center justify-center h-full px-2 cursor-pointer group/content" title={`Delete segment: ${formatTime(segment.start)} - ${formatTime(segment.end)}`}>
-                  <span className="text-xs text-white font-medium mr-2 group-hover/content:hidden">
-                    {formatTime(segment.end - segment.start)}
-                  </span>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    onClick={() => removeSegment(segment.id)}
-                    className="p-2 h-auto hidden group-hover/content:flex bg-primary"
-                    title="Delete segment"
+                  {/* Start resize handle */}
+                  <div
+                    className={cn(
+                      `absolute left-0 top-0 bottom-0 w-2 bg-primary/70 cursor-w-resize opacity-0 group-hover:opacity-100 hover:bg-primary hover:w-3 transition-all z-30 flex items-center justify-center`,
+                      dragState.type === 'resize-start' && isDragging ? '!opacity-100' : ''
+                    )}
+                    onMouseDown={handleSegmentResizeStart(segment.id, 'start')}
+                    title="Drag to adjust start time (prevents overlap)"
                   >
-                    <Trash2Icon className="size-3 text-white" />
-                  </Button>
+                    <div className="w-px h-4 bg-white opacity-80"></div>
+                  </div>
+
+                  {/* End resize handle */}
+                  <div
+                    className={cn(
+                      `absolute right-0 top-0 bottom-0 w-2 bg-primary/70 cursor-e-resize opacity-0 group-hover:opacity-100 hover:bg-primary hover:w-3 transition-all z-30 flex items-center justify-center`,
+                      dragState.type === 'resize-end' && isDragging ? 'opacity-100' : ''
+                    )}
+                    onMouseDown={handleSegmentResizeStart(segment.id, 'end')}
+                    title="Drag to adjust end time (prevents overlap)"
+                  >
+                    <div className="w-px h-4 bg-white opacity-80"></div>
+                  </div>
+
+                  {/* Segment content */}
+                  <div
+                    className="flex items-center justify-center px-2 cursor-pointer group/content"
+                    title={`Delete segment: ${formatTime(segment.start)} - ${formatTime(segment.end)}`}
+                  >
+                    <span className="text-xs text-white font-medium mr-2 group-hover/content:hidden">
+                      {segment.end - segment.start}s
+                    </span>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      onClick={() => removeSegment(segment.id)}
+                      className="p-2 h-auto hidden group-hover/content:flex bg-primary"
+                      title="Delete segment"
+                    >
+                      <Trash2Icon className="size-3 text-white" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
-
-        {/* Segment List */}
-        {/* {segments.length > 0 && (
-        <div className="space-y-2 px-4 mt-4">
-          <h4 className="font-medium text-gray-900">
-            Segments to Delete:
-          </h4>
-          {segments.map((segment) => (
-            <div
-              key={segment.id}
-              className="flex items-center justify-between bg-red-50 p-3 rounded-lg"
-            >
-              <span className="text-sm">
-                {formatTime(segment.start)} -{' '}
-                {formatTime(segment.end)} (
-                {formatTime(segment.end - segment.start)})
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => removeSegment(segment.id)}
-                className="text-red-600 hover:text-red-700"
-              >
-                <Trash2Icon className="w-4 h-4" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      )} */}
       </div>
     </div>
   );
 }
 
 function buildCdnUrl(fileId: string) {
-  // https://bunpeg.fra1.cdn.digitaloceanspaces.com/uxzpNRlh/dash/manifesto.mpd
+  // https://bunpeg.fra1.cdn.digitaloceanspaces.com/:file_id/dash/manifesto.mpd
   return `https://bunpeg.fra1.cdn.digitaloceanspaces.com/${fileId}/dash/manifesto.mpd`;
 }
