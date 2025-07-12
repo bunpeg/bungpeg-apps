@@ -327,20 +327,6 @@ export default function Editor(props: Props) {
     return percentage * duration;
   }, [duration]);
 
-  const handleTimelineClick = (e: React.MouseEvent) => {
-    if (dragState.type !== null) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-
-    const targetTime = snapToGrid(getTimelinePosition(e.clientX));
-
-    if (videoRef.current && Math.abs(targetTime - currentTime) > 0.1) {
-      videoRef.current.seek(targetTime);
-      setCurrentTime(targetTime);
-    }
-  };
-
   const handleTimelineMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -461,25 +447,21 @@ export default function Editor(props: Props) {
         <div className="relative overflow-hidden">
           <div
             ref={timelineRef}
-            className="relative h-20 border-2 border-primary select-none overflow-hidden"
-            style={{
-              cursor: dragState.type === 'create'
-                ? 'crosshair'
-                : dragState.type === 'resize-start' || dragState.type === 'resize-end'
-                  ? 'col-resize'
-                  : 'pointer',
-            }}
-            onMouseDown={handleTimelineMouseDown}
-            onMouseMove={handleTimelineMouseMove}
-            onMouseUp={handleTimelineMouseUp}
-            onMouseLeave={handleTimelineMouseLeave}
-            onClick={handleTimelineClick}
+            data-dragstyle={dragState.type}
+            className={cn(
+              'relative h-20 border-2 border-primary select-none overflow-hidden cursor-pointer',
+              'data-[dragstyle=create]:cursor-crosshair data-[dragstyle=resize-start]:cursor-col-resize data-[dragstyle=resize-end]:cursor-col-resize'
+            )}
+            tabIndex={0}
             role="slider"
             aria-label="Video timeline"
             aria-valuemin={0}
             aria-valuemax={duration}
             aria-valuenow={currentTime}
-            tabIndex={0}
+            onMouseDown={handleTimelineMouseDown}
+            onMouseMove={handleTimelineMouseMove}
+            onMouseUp={handleTimelineMouseUp}
+            onMouseLeave={handleTimelineMouseLeave}
           >
             {/* Grid markers */}
             {Array.from({ length: Math.ceil(duration / TIMELINE_CONFIG.GRID_INTERVAL) + 1 }, (_, i) => {
