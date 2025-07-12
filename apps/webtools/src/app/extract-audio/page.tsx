@@ -130,7 +130,7 @@ export default function ExtractAudioPage() {
         </div>
         <RenderIf condition={hasFiles}>
           <div className="flex items-center gap-1">
-            <Button variant="outline" onClick={() => process()} disabled={isProcessing}>
+            <Button onClick={() => process()} disabled={isProcessing}>
               {
                 isProcessing
                   ? <Loader size="icon" color="primary" className="mr-2" />

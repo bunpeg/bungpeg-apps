@@ -24,28 +24,12 @@ export default function TrimPage() {
   }, []);
 
   return (
-    <section className="mx-auto max-w-3xl px-4 flex flex-col gap-6 py-10">
-      <div>
-        <Link href="/">
-          <Button variant="link" className="px-0">
-            <ArrowLeftIcon className="size-4 mr-2" />
-            Go back
-          </Button>
-        </Link>
-      </div>
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl">Trim Video</h1>
-          <span className="text-muted-foreground text-sm">
-            Upload a video, preview it, and mark segments to delete
-          </span>
-        </div>
-      </div>
+    <>
       <RenderIf condition={!uploadedFile}>
         <Uploader onSuccess={(info) => setUploadedFile({ ...info, status: 'pending' })} />
       </RenderIf>
 
       {uploadedFile ? <Editor file={uploadedFile} onRemove={() => setUploadedFile(null)} /> : null}
-    </section>
+    </>
   );
 }

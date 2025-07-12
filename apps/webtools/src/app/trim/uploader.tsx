@@ -10,6 +10,8 @@ import { appendFile } from '@/utils/file-store';
 import { VIDEO_MIME_TYPES } from '@/utils/formats';
 import FileUploadCard from '@/components/file-upload';
 
+import Wrapper from './wrapper';
+
 interface Props {
   onSuccess: (file: { id: string; name: string }) => void;
 }
@@ -85,28 +87,32 @@ export default function Uploader(props: Props) {
 
   if (!localFile) {
     return (
-      <FileUploadCard
-        description="Accepts a single video file"
-        onSuccess={handleLocalFileUpload}
-        accept={VIDEO_MIME_TYPES}
-        multiple={false}
-      />
+      <Wrapper>
+        <FileUploadCard
+          description="Accepts a single video file"
+          onSuccess={handleLocalFileUpload}
+          accept={VIDEO_MIME_TYPES}
+          multiple={false}
+        />
+      </Wrapper>
     )
   }
 
   return (
-    <div className="border flex gap-2 p-4">
-      <FileVideoIcon className="size-5 mt-1" />
-      <div className="flex flex-col gap-1">
-        <span>{localFile.name}</span>
-        {mutationError && (
-          <span className="text-xs text-red-500">{mutationError.message}</span>
-        )}
+    <Wrapper>
+      <div className="border flex gap-2 p-4">
+        <FileVideoIcon className="size-5 mt-1" />
+        <div className="flex flex-col gap-1">
+          <span>{localFile.name}</span>
+          {mutationError && (
+            <span className="text-xs text-red-500">{mutationError.message}</span>
+          )}
+        </div>
+        <RenderIf condition={!mutationError}>
+          <Loader size="icon" color="primary" className="ml-auto" />
+        </RenderIf>
       </div>
-      <RenderIf condition={!mutationError}>
-        <Loader size="icon" color="primary" className="ml-auto" />
-      </RenderIf>
-    </div>
+    </Wrapper>
   );
 }
 

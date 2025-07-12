@@ -39,7 +39,7 @@ const DashVideoPlayer = ({ src, ref: externalRef, className, ...rest }: Props) =
   }, [src, videoRef, externalRef]);
 
   return (
-    <video ref={videoRef} className={cn('aspect-video w-full', className)} {...rest} />
+    <video ref={videoRef} className={cn('w-full', className)} {...rest} />
   );
 };
 
