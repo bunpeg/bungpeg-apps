@@ -550,9 +550,9 @@ export default function Editor(props: Props) {
                 <div
                   key={segment.id}
                   className={cn(
-                    `absolute top-0 bottom-0 border flex items-center justify-center group z-20`,
+                    `absolute top-0 bottom-0 border-r border-l flex items-center justify-center group z-20`,
                     dragState.segmentId === segment.id
-                      ? 'bg-primary/70 border-primary border-2'
+                      ? 'bg-primary/70 border-primary'
                       : 'bg-primary/60 border-primary'
                   )}
                   style={{
@@ -565,7 +565,7 @@ export default function Editor(props: Props) {
                   {/* Start resize handle */}
                   <div
                     className={cn(
-                      `absolute left-0 top-0 bottom-0 w-2 bg-primary/70 cursor-w-resize opacity-0 group-hover:opacity-100 hover:bg-primary hover:w-3 transition-all z-30 flex items-center justify-center`,
+                      `absolute -left-2 top-0 bottom-0 w-2 bg-primary cursor-w-resize opacity-0 group-hover:opacity-100 hover:w-3 hover:-left-3 transition-all z-30 flex items-center justify-center`,
                       dragState.type === 'resize-start' && isDragging ? '!opacity-100' : ''
                     )}
                     onMouseDown={handleSegmentResizeStart(segment.id, 'start')}
@@ -577,7 +577,7 @@ export default function Editor(props: Props) {
                   {/* End resize handle */}
                   <div
                     className={cn(
-                      `absolute right-0 top-0 bottom-0 w-2 bg-primary/70 cursor-e-resize opacity-0 group-hover:opacity-100 hover:bg-primary hover:w-3 transition-all z-30 flex items-center justify-center`,
+                      `absolute -right-2 top-0 bottom-0 w-2 bg-primary cursor-e-resize opacity-0 group-hover:opacity-100 hover:w-3 hover:-right-3 transition-all z-30 flex items-center justify-center`,
                       dragState.type === 'resize-end' && isDragging ? 'opacity-100' : ''
                     )}
                     onMouseDown={handleSegmentResizeStart(segment.id, 'end')}
@@ -591,7 +591,7 @@ export default function Editor(props: Props) {
                     className="flex items-center justify-center px-2 cursor-pointer group/content"
                     title={`Delete segment: ${formatTime(segment.start)} - ${formatTime(segment.end)}`}
                   >
-                    <span className="text-xs text-white font-medium mr-2 group-hover/content:hidden">
+                    <span className="text-xs text-white font-medium group-hover/content:hidden">
                       {segment.end - segment.start}s
                     </span>
                     <Button
