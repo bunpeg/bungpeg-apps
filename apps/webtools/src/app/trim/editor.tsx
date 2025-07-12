@@ -128,11 +128,14 @@ export default function Editor(props: Props) {
     return Math.abs(snapped - time) < TIMELINE_CONFIG.SNAP_TOLERANCE ? snapped : time;
   }, []);
 
-  const checkSegmentCollision = useCallback((start: number, end: number, excludeId?: string) => {
-    return segments.some(segment => {
-      if (excludeId && segment.id === excludeId) return false;
-      return (start < segment.end && end > segment.start);
-    });
+  const checkSegmentCollision = useCallback((start: number, end: number, excludeId?: string): TrimSegment | null => {
+    for (const segment of segments) {
+      if (excludeId && segment.id === excludeId) continue;
+      if (start < segment.end && end > segment.start) {
+        return segment; // Return the colliding segment
+      }
+    }
+    return null; // No collision
   }, [segments]);
 
   const findNearestValidPosition = useCallback((targetStart: number, targetEnd: number, excludeId?: string) => {
@@ -174,56 +177,54 @@ export default function Editor(props: Props) {
   const updateSegmentStart = useCallback((segmentId: string, newStart: number) => {
     setSegments(prev => prev.map(segment => {
       if (segment.id === segmentId) {
-        const clampedStart = Math.max(0, Math.min(newStart, segment.end - TIMELINE_CONFIG.MIN_SEGMENT_DURATION));
+        let potentialStart = newStart;
+        let finalStart = potentialStart;
 
-        // Check for collision with other segments
-        if (checkSegmentCollision(clampedStart, segment.end, segmentId)) {
-          // Find nearest valid start position
-          const nearestEnd = segments
-            .filter(s => s.id !== segmentId && s.start >= clampedStart)
-            .sort((a, b) => a.start - b.start)[0]?.start || segment.end;
-
-          const maxValidStart = Math.min(nearestEnd - TIMELINE_CONFIG.MIN_SEGMENT_DURATION, segment.end - TIMELINE_CONFIG.MIN_SEGMENT_DURATION);
-          const validStart = Math.max(0, maxValidStart);
-
-          if (!checkSegmentCollision(validStart, segment.end, segmentId)) {
-            return { ...segment, start: validStart };
+        const collidingSegment = checkSegmentCollision(potentialStart, segment.end, segmentId);
+        if (collidingSegment) {
+          // If expanding left (newStart < segment.start, trying to go left of current start)
+          if (newStart < segment.start) {
+            finalStart = Math.max(potentialStart, collidingSegment.end);
+          } else { // If shrinking left (newStart > segment.start, trying to go right of current start)
+            finalStart = Math.min(potentialStart, collidingSegment.start - TIMELINE_CONFIG.MIN_SEGMENT_DURATION);
           }
-          return segment; // No valid position found
         }
+        // Ensure finalStart is never less than 0
+        finalStart = Math.max(0, finalStart);
+        // Ensure finalStart doesn't make segment shorter than MIN_SEGMENT_DURATION
+        finalStart = Math.min(finalStart, segment.end - TIMELINE_CONFIG.MIN_SEGMENT_DURATION);
 
-        return { ...segment, start: clampedStart };
+        return { ...segment, start: finalStart };
       }
       return segment;
     }));
-  }, [checkSegmentCollision, segments]);
+  }, [checkSegmentCollision]);
 
   const updateSegmentEnd = useCallback((segmentId: string, newEnd: number) => {
     setSegments(prev => prev.map(segment => {
       if (segment.id === segmentId) {
-        const clampedEnd = Math.min(duration, Math.max(newEnd, segment.start + TIMELINE_CONFIG.MIN_SEGMENT_DURATION));
+        let potentialEnd = newEnd;
+        let finalEnd = potentialEnd;
 
-        // Check for collision with other segments
-        if (checkSegmentCollision(segment.start, clampedEnd, segmentId)) {
-          // Find nearest valid end position
-          const nearestStart = segments
-            .filter(s => s.id !== segmentId && s.end <= clampedEnd)
-            .sort((a, b) => b.end - a.end)[0]?.end || segment.start;
-
-          const maxValidEnd = Math.max(nearestStart + TIMELINE_CONFIG.MIN_SEGMENT_DURATION, segment.start + TIMELINE_CONFIG.MIN_SEGMENT_DURATION);
-          const validEnd = Math.min(duration, maxValidEnd);
-
-          if (!checkSegmentCollision(segment.start, validEnd, segmentId)) {
-            return { ...segment, end: validEnd };
+        const collidingSegment = checkSegmentCollision(segment.start, potentialEnd, segmentId);
+        if (collidingSegment) {
+          // If expanding right (newEnd > segment.end, trying to go right of current end)
+          if (newEnd > segment.end) {
+            finalEnd = Math.min(potentialEnd, collidingSegment.start); // Snap to the start of the colliding segment
+          } else { // If shrinking right (newEnd < segment.end, trying to go left of current end)
+            finalEnd = Math.max(potentialEnd, collidingSegment.end + TIMELINE_CONFIG.MIN_SEGMENT_DURATION); // Prevent shrinking into it
           }
-          return segment; // No valid position found
         }
+        // Ensure finalEnd is never greater than duration
+        finalEnd = Math.min(duration, finalEnd);
+        // Ensure finalEnd doesn't make segment shorter than MIN_SEGMENT_DURATION
+        finalEnd = Math.max(finalEnd, segment.start + TIMELINE_CONFIG.MIN_SEGMENT_DURATION);
 
-        return { ...segment, end: clampedEnd };
+        return { ...segment, end: finalEnd };
       }
       return segment;
     }));
-  }, [duration, checkSegmentCollision, segments]);
+  }, [duration, checkSegmentCollision]);
 
   // Global mouse event handling for better drag behavior
   useEffect(() => {
@@ -513,7 +514,7 @@ export default function Editor(props: Props) {
                   `absolute top-0 bottom-0 border-2 border-dashed z-30 pointer-events-none`,
                   checkSegmentCollision(previewSegment.start, previewSegment.end)
                     ? 'bg-yellow-200 bg-opacity-70 border-yellow-600'
-                    : 'bg-red-200 bg-opacity-70 border-red-600'
+                    : 'bg-primary/60 border-primary'
                 )}
                 style={{
                   left: `${(previewSegment.start / duration) * 100}%`,
@@ -527,7 +528,7 @@ export default function Editor(props: Props) {
                         `text-xs font-bold px-1 bg-white bg-opacity-90`,
                         checkSegmentCollision(previewSegment.start, previewSegment.end)
                           ? 'text-yellow-900'
-                          : 'text-red-900'
+                          : 'text-primary'
 
                       )}
                     >
@@ -610,10 +611,10 @@ export default function Editor(props: Props) {
                     variant="link"
                     size="sm"
                     onClick={() => removeSegment(segment.id)}
-                    className="p-1 h-auto hidden group-hover/content:flex"
+                    className="p-2 h-auto hidden group-hover/content:flex bg-primary"
                     title="Delete segment"
                   >
-                    <Trash2Icon className="size-3 text-white drop-shadow-sm" />
+                    <Trash2Icon className="size-3 text-white" />
                   </Button>
                 </div>
               </div>
