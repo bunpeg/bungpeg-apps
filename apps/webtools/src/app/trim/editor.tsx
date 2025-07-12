@@ -6,6 +6,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { FileVideoIcon, Trash2Icon } from 'lucide-react';
 import {
   Button,
+  cn,
   Loader,
   RenderIf,
   toast,
@@ -127,25 +128,102 @@ export default function Editor(props: Props) {
     return Math.abs(snapped - time) < TIMELINE_CONFIG.SNAP_TOLERANCE ? snapped : time;
   }, []);
 
+  const checkSegmentCollision = useCallback((start: number, end: number, excludeId?: string) => {
+    return segments.some(segment => {
+      if (excludeId && segment.id === excludeId) return false;
+      return (start < segment.end && end > segment.start);
+    });
+  }, [segments]);
+
+  const findNearestValidPosition = useCallback((targetStart: number, targetEnd: number, excludeId?: string) => {
+    const otherSegments = segments.filter(seg => excludeId ? seg.id !== excludeId : true);
+
+    // Sort segments by start time
+    const sortedSegments = [...otherSegments].sort((a, b) => a.start - b.start);
+
+    // Try to fit the segment at the target position
+    if (!checkSegmentCollision(targetStart, targetEnd, excludeId)) {
+      return { start: targetStart, end: targetEnd };
+    }
+
+    // Find the nearest valid position
+    const segmentDuration = targetEnd - targetStart;
+
+    // Try before each existing segment
+    for (const segment of sortedSegments) {
+      const candidateEnd = segment.start;
+      const candidateStart = candidateEnd - segmentDuration;
+      if (candidateStart >= 0 && !checkSegmentCollision(candidateStart, candidateEnd, excludeId)) {
+        return { start: candidateStart, end: candidateEnd };
+      }
+    }
+
+    // Try after each existing segment
+    for (const segment of sortedSegments) {
+      const candidateStart = segment.end;
+      const candidateEnd = candidateStart + segmentDuration;
+      if (candidateEnd <= duration && !checkSegmentCollision(candidateStart, candidateEnd, excludeId)) {
+        return { start: candidateStart, end: candidateEnd };
+      }
+    }
+
+    // If no valid position found, return original
+    return null;
+  }, [segments, checkSegmentCollision, duration]);
+
   const updateSegmentStart = useCallback((segmentId: string, newStart: number) => {
     setSegments(prev => prev.map(segment => {
       if (segment.id === segmentId) {
         const clampedStart = Math.max(0, Math.min(newStart, segment.end - TIMELINE_CONFIG.MIN_SEGMENT_DURATION));
+
+        // Check for collision with other segments
+        if (checkSegmentCollision(clampedStart, segment.end, segmentId)) {
+          // Find nearest valid start position
+          const nearestEnd = segments
+            .filter(s => s.id !== segmentId && s.start >= clampedStart)
+            .sort((a, b) => a.start - b.start)[0]?.start || segment.end;
+
+          const maxValidStart = Math.min(nearestEnd - TIMELINE_CONFIG.MIN_SEGMENT_DURATION, segment.end - TIMELINE_CONFIG.MIN_SEGMENT_DURATION);
+          const validStart = Math.max(0, maxValidStart);
+
+          if (!checkSegmentCollision(validStart, segment.end, segmentId)) {
+            return { ...segment, start: validStart };
+          }
+          return segment; // No valid position found
+        }
+
         return { ...segment, start: clampedStart };
       }
       return segment;
     }));
-  }, []);
+  }, [checkSegmentCollision, segments]);
 
   const updateSegmentEnd = useCallback((segmentId: string, newEnd: number) => {
     setSegments(prev => prev.map(segment => {
       if (segment.id === segmentId) {
         const clampedEnd = Math.min(duration, Math.max(newEnd, segment.start + TIMELINE_CONFIG.MIN_SEGMENT_DURATION));
+
+        // Check for collision with other segments
+        if (checkSegmentCollision(segment.start, clampedEnd, segmentId)) {
+          // Find nearest valid end position
+          const nearestStart = segments
+            .filter(s => s.id !== segmentId && s.end <= clampedEnd)
+            .sort((a, b) => b.end - a.end)[0]?.end || segment.start;
+
+          const maxValidEnd = Math.max(nearestStart + TIMELINE_CONFIG.MIN_SEGMENT_DURATION, segment.start + TIMELINE_CONFIG.MIN_SEGMENT_DURATION);
+          const validEnd = Math.min(duration, maxValidEnd);
+
+          if (!checkSegmentCollision(segment.start, validEnd, segmentId)) {
+            return { ...segment, end: validEnd };
+          }
+          return segment; // No valid position found
+        }
+
         return { ...segment, end: clampedEnd };
       }
       return segment;
     }));
-  }, [duration]);
+  }, [duration, checkSegmentCollision, segments]);
 
   // Global mouse event handling for better drag behavior
   useEffect(() => {
@@ -172,13 +250,16 @@ export default function Editor(props: Props) {
       if (dragState.type === 'create' && previewSegment) {
         const segmentDuration = previewSegment.end - previewSegment.start;
         if (segmentDuration >= TIMELINE_CONFIG.MIN_SEGMENT_DURATION) {
-          const newSegment: TrimSegment = {
-            id: Math.random().toString(36).slice(2, 9),
-            start: previewSegment.start,
-            end: previewSegment.end,
-            type: 'delete',
-          };
-          setSegments(prev => [...prev, newSegment]);
+          // Check for collision before creating the segment
+          if (!checkSegmentCollision(previewSegment.start, previewSegment.end)) {
+            const newSegment: TrimSegment = {
+              id: Math.random().toString(36).slice(2, 9),
+              start: previewSegment.start,
+              end: previewSegment.end,
+              type: 'delete',
+            };
+            setSegments(prev => [...prev, newSegment]);
+          }
         }
       }
 
@@ -195,7 +276,7 @@ export default function Editor(props: Props) {
       document.removeEventListener('mousemove', handleGlobalMouseMove);
       document.removeEventListener('mouseup', handleGlobalMouseUp);
     };
-  }, [dragState, previewSegment, duration, snapToGrid, updateSegmentStart, updateSegmentEnd]);
+  }, [dragState, previewSegment, duration, snapToGrid, updateSegmentStart, updateSegmentEnd, checkSegmentCollision, findNearestValidPosition]);
 
   const togglePlayPause = useCallback(() => {
     if (videoRef.current) {
@@ -375,135 +456,173 @@ export default function Editor(props: Props) {
       />
 
       {/* Timeline for Segment Selection */}
-      <div className="relative overflow-hidden mt-2">
-        <div
-          ref={timelineRef}
-          className="relative h-20 bg-gray-200 select-none border-2 border-gray-100 overflow-hidden"
-          style={{
-            cursor: dragState.type === 'create'
-              ? 'crosshair'
-              : dragState.type === 'resize-start' || dragState.type === 'resize-end'
-                ? 'col-resize'
-                : 'pointer',
-          }}
-          onMouseDown={handleTimelineMouseDown}
-          onMouseMove={handleTimelineMouseMove}
-          onMouseUp={handleTimelineMouseUp}
-          onMouseLeave={handleTimelineMouseLeave}
-          onClick={handleTimelineClick}
-          role="slider"
-          aria-label="Video timeline"
-          aria-valuemin={0}
-          aria-valuemax={duration}
-          aria-valuenow={currentTime}
-          tabIndex={0}
-        >
-          {/* Grid markers */}
-          {Array.from({ length: Math.ceil(duration / TIMELINE_CONFIG.GRID_INTERVAL) + 1 }, (_, i) => {
-            const time = i * TIMELINE_CONFIG.GRID_INTERVAL;
-            if (time > duration) return null;
-            const isMainMarker = i % 5 === 0;
-            return (
+      <div className="space-y-4 mt-2 px-4">
+        <div className="relative overflow-hidden">
+          <div
+            ref={timelineRef}
+            className="relative h-20 border-2 border-primary select-none overflow-hidden"
+            style={{
+              cursor: dragState.type === 'create'
+                ? 'crosshair'
+                : dragState.type === 'resize-start' || dragState.type === 'resize-end'
+                  ? 'col-resize'
+                  : 'pointer',
+            }}
+            onMouseDown={handleTimelineMouseDown}
+            onMouseMove={handleTimelineMouseMove}
+            onMouseUp={handleTimelineMouseUp}
+            onMouseLeave={handleTimelineMouseLeave}
+            onClick={handleTimelineClick}
+            role="slider"
+            aria-label="Video timeline"
+            aria-valuemin={0}
+            aria-valuemax={duration}
+            aria-valuenow={currentTime}
+            tabIndex={0}
+          >
+            {/* Grid markers */}
+            {Array.from({ length: Math.ceil(duration / TIMELINE_CONFIG.GRID_INTERVAL) + 1 }, (_, i) => {
+              const time = i * TIMELINE_CONFIG.GRID_INTERVAL;
+              if (time > duration) return null;
+              const isMainMarker = i % 5 === 0;
+              return (
+                <div
+                  key={i}
+                  className={`absolute top-0 bottom-0 w-px ${isMainMarker ? 'bg-primary/30' : 'bg-primary/10'}`}
+                  style={{
+                    left: `${duration > 0 ? (time / duration) * 100 : 0}%`,
+                  }}
+                />
+              );
+            })}
+
+            {/* Current time indicator */}
+            <div
+              className="absolute top-0 bottom-0 w-1 bg-primary z-40 pointer-events-none shadow-lg"
+              style={{
+                left: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
+              }}
+            >
+              <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-primary rotate-45"></div>
+            </div>
+
+            {/* Preview segment during creation */}
+            {previewSegment && duration > 0 && (
               <div
-                key={i}
-                className={`absolute top-0 bottom-0 w-px ${isMainMarker ? 'bg-gray-600 opacity-50' : 'bg-gray-400 opacity-20'}`}
+                className={cn(
+                  `absolute top-0 bottom-0 border-2 border-dashed z-30 pointer-events-none`,
+                  checkSegmentCollision(previewSegment.start, previewSegment.end)
+                    ? 'bg-yellow-200 bg-opacity-70 border-yellow-600'
+                    : 'bg-red-200 bg-opacity-70 border-red-600'
+                )}
                 style={{
-                  left: `${duration > 0 ? (time / duration) * 100 : 0}%`,
+                  left: `${(previewSegment.start / duration) * 100}%`,
+                  width: `${Math.max(0.5, ((previewSegment.end - previewSegment.start) / duration) * 100)}%`,
                 }}
               >
-                {isMainMarker && (
-                  <div className="absolute -top-5 left-0 text-xs text-gray-600 font-medium transform -translate-x-1/2 bg-white px-1 rounded shadow-sm">
-                    {formatTime(time)}
+                <div className="flex items-center justify-center h-full">
+                  {previewSegment.end - previewSegment.start > 1 && (
+                    <span
+                      className={cn(
+                        `text-xs font-bold px-1 bg-white bg-opacity-90`,
+                        checkSegmentCollision(previewSegment.start, previewSegment.end)
+                          ? 'text-yellow-900'
+                          : 'text-red-900'
+
+                      )}
+                    >
+                      {checkSegmentCollision(previewSegment.start, previewSegment.end) ? 'Overlap!' : formatTime(previewSegment.end - previewSegment.start)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Collision boundaries for active resize */}
+            {dragState.type === 'resize-start' || dragState.type === 'resize-end' ? (
+              segments
+                .filter(s => s.id !== dragState.segmentId)
+                .map((boundarySegment) => (
+                  <div
+                    key={`boundary-${boundarySegment.id}`}
+                    className="absolute top-0 bottom-0 bg-orange-400 border-2 border-orange-400 z-50 pointer-events-none"
+                    style={{
+                      left: `${duration > 0 ? (boundarySegment.start / duration) * 100 : 0}%`,
+                      width: `${duration > 0 ? Math.max(1, ((boundarySegment.end - boundarySegment.start) / duration) * 100) : 0}%`,
+                    }}
+                  >
+                    <div className="flex items-center justify-center h-full">
+                      <span className="text-xs text-black font-bold px-1">
+                        Blocked
+                      </span>
+                    </div>
                   </div>
-                )}
-              </div>
-            );
-          })}
+                ))
+            ) : null}
 
-          {/* Current time indicator */}
-          <div
-            className="absolute top-0 bottom-0 w-1 bg-primary z-40 pointer-events-none shadow-lg"
-            style={{
-              left: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
-            }}
-          >
-            <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-primary rotate-45"></div>
-          </div>
-
-          {/* Preview segment during creation */}
-          {previewSegment && duration > 0 && (
-            <div
-              className="absolute top-0 bottom-0 bg-red-200 bg-opacity-70 border-2 border-red-600 border-dashed z-30 pointer-events-none"
-              style={{
-                left: `${(previewSegment.start / duration) * 100}%`,
-                width: `${Math.max(0.5, ((previewSegment.end - previewSegment.start) / duration) * 100)}%`,
-              }}
-            >
-              <div className="flex items-center justify-center h-full">
-                {previewSegment.end - previewSegment.start > 1 && (
-                  <span className="text-xs text-red-900 font-bold px-1 bg-white bg-opacity-90 shadow rounded">
-                    {formatTime(previewSegment.end - previewSegment.start)}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Existing segments */}
-          {segments.map((segment) => (
-            <div
-              key={segment.id}
-              className="absolute top-0 bottom-0 bg-red-500 bg-opacity-60 border border-red-600 flex items-center justify-center group/segment z-20"
-              style={{
-                left: `${duration > 0 ? (segment.start / duration) * 100 : 0}%`,
-                width: `${duration > 0 ? Math.max(1, ((segment.end - segment.start) / duration) * 100) : 0}%`,
-              }}
-              onMouseEnter={() => setHoveredSegment(segment.id)}
-              onMouseLeave={() => setHoveredSegment(null)}
-            >
-              {/* Start resize handle */}
+            {/* Existing segments */}
+            {segments.map((segment) => (
               <div
-                className="absolute left-0 top-0 bottom-0 w-2 bg-red-700 cursor-w-resize opacity-0 group-hover/segment:opacity-100 hover:bg-red-800 hover:w-3 transition-all z-30 flex items-center justify-center"
-                onMouseDown={handleSegmentResizeStart(segment.id, 'start')}
-                title="Drag to adjust start time"
+                key={segment.id}
+                className={cn(
+                  `absolute top-0 bottom-0 border flex items-center justify-center group z-20`,
+                  dragState.segmentId === segment.id
+                    ? 'bg-primary/70 border-primary border-2'
+                    : 'bg-primary/60 border-primary'
+                )}
+                style={{
+                  left: `${duration > 0 ? (segment.start / duration) * 100 : 0}%`,
+                  width: `${duration > 0 ? Math.max(1, ((segment.end - segment.start) / duration) * 100) : 0}%`,
+                }}
+                onMouseEnter={() => setHoveredSegment(segment.id)}
+                onMouseLeave={() => setHoveredSegment(null)}
               >
-                <div className="w-px h-4 bg-white opacity-80"></div>
-              </div>
-
-              {/* End resize handle */}
-              <div
-                className="absolute right-0 top-0 bottom-0 w-2 bg-red-700 cursor-e-resize opacity-0 group-hover/segment:opacity-100 hover:bg-red-800 hover:w-3 transition-all z-30 flex items-center justify-center"
-                onMouseDown={handleSegmentResizeStart(segment.id, 'end')}
-                title="Drag to adjust end time"
-              >
-                <div className="w-px h-4 bg-white opacity-80"></div>
-              </div>
-
-              {/* Segment content */}
-              <div className="flex items-center justify-center px-2 cursor-pointer group/content border-background" title={`Delete segment: ${formatTime(segment.start)} - ${formatTime(segment.end)}`}>
-                <span className="text-xs text-white font-medium group-hover/content:hidden transition-opacity mr-2">
-                  {formatTime(segment.end - segment.start)}
-                </span>
-                <Button
-                  variant="link"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeSegment(segment.id);
-                  }}
-                  className="hidden group-hover/content:flex transition-opacity p-1 h-auto hover:bg-red-800"
-                  title="Delete segment"
+                {/* Start resize handle */}
+                <div
+                  className={cn(
+                    `absolute left-0 top-0 bottom-0 w-2 bg-primary/70 cursor-w-resize opacity-0 group-hover:opacity-100 hover:bg-primary hover:w-3 transition-all z-30 flex items-center justify-center`,
+                    dragState.type === 'resize-start' && dragState.segmentId === segment.id ? '!opacity-100' : ''
+                  )}
+                  onMouseDown={handleSegmentResizeStart(segment.id, 'start')}
+                  title="Drag to adjust start time (prevents overlap)"
                 >
-                  <Trash2Icon className="size-3 text-white drop-shadow-sm" />
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+                  <div className="w-px h-4 bg-white opacity-80"></div>
+                </div>
 
-      {/* Segment List */}
-      {/* {segments.length > 0 && (
+                {/* End resize handle */}
+                <div
+                  className={cn(
+                    `absolute right-0 top-0 bottom-0 w-2 bg-primary/70 cursor-e-resize opacity-0 group-hover:opacity-100 hover:bg-primary hover:w-3 transition-all z-30 flex items-center justify-center`,
+                    dragState.type === 'resize-end' && dragState.segmentId === segment.id ? 'opacity-100' : ''
+                  )}
+                  onMouseDown={handleSegmentResizeStart(segment.id, 'end')}
+                  title="Drag to adjust end time (prevents overlap)"
+                >
+                  <div className="w-px h-4 bg-white opacity-80"></div>
+                </div>
+
+                {/* Segment content */}
+                <div className="flex items-center justify-center h-full px-2 cursor-pointer group/content" title={`Delete segment: ${formatTime(segment.start)} - ${formatTime(segment.end)}`}>
+                  <span className="text-xs text-white font-medium mr-2 group-hover/content:hidden">
+                    {formatTime(segment.end - segment.start)}
+                  </span>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={() => removeSegment(segment.id)}
+                    className="p-1 h-auto hidden group-hover/content:flex"
+                    title="Delete segment"
+                  >
+                    <Trash2Icon className="size-3 text-white drop-shadow-sm" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Segment List */}
+        {/* {segments.length > 0 && (
         <div className="space-y-2 px-4 mt-4">
           <h4 className="font-medium text-gray-900">
             Segments to Delete:
@@ -530,6 +649,7 @@ export default function Editor(props: Props) {
           ))}
         </div>
       )} */}
+      </div>
     </div>
   );
 }
