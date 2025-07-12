@@ -14,7 +14,7 @@ const DashVideoPlayer = ({ src, ref: externalRef, className, ...rest }: Props) =
       playerRef.current = dashjs.MediaPlayer().create();
       externalRef.current = playerRef.current;
 
-      playerRef.current.initialize(videoRef.current, src, true); // true for autoPlay
+      playerRef.current.initialize(videoRef.current, src, false);
 
       playerRef.current.on(dashjs.MediaPlayer.events.ERROR, (event) => {
         console.error('Dash.js error:', event);
