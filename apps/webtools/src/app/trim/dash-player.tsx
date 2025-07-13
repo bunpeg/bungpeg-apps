@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import * as dashjs from 'dashjs';
 import { cn } from '@bunpeg/ui';
 
-type Props = Omit<React.ComponentProps<'video'>, 'src' | 'ref'> & { src: string; ref: React.RefObject<dashjs.MediaPlayerClass | null> };
+type Props = Omit<React.ComponentProps<'video'>, 'src' | 'ref'> & { src: string; ref?: React.RefObject<dashjs.MediaPlayerClass | null> };
 
 const DashVideoPlayer = ({ src, ref: externalRef, className, ...rest }: Props) => {
   const playerRef = useRef<dashjs.MediaPlayerClass | null>(null);
@@ -12,7 +12,10 @@ const DashVideoPlayer = ({ src, ref: externalRef, className, ...rest }: Props) =
     if (videoRef.current && !playerRef.current) {
       console.log('Initializing dash.js player...');
       playerRef.current = dashjs.MediaPlayer().create();
-      externalRef.current = playerRef.current;
+
+      if (externalRef) {
+        externalRef.current = playerRef.current;
+      }
 
       playerRef.current.initialize(videoRef.current, src, false);
 

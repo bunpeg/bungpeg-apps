@@ -1,15 +1,14 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Button, RenderIf } from '@bunpeg/ui';
-import { ArrowLeftIcon } from 'lucide-react';
+import { RenderIf } from '@bunpeg/ui';
 
 import type { StoredFile } from '@/types';
 import { retrieveFiles } from '@/utils/file-store';
 
-import Uploader from './uploader';
 import Editor from './editor';
+import Uploader from './uploader';
+import Preview from './preview';
 
 export default function TrimPage() {
   const [uploadedFile, setUploadedFile] = useState<StoredFile | null>(null);
@@ -23,13 +22,28 @@ export default function TrimPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const handleProcessed = (mergedFileId: string) => {
+    if (!uploadedFile) return;
+    setUploadedFile({ ...uploadedFile, id: mergedFileId, status: 'processed' });
+  }
+
   return (
     <>
       <RenderIf condition={!uploadedFile}>
         <Uploader onSuccess={(info) => setUploadedFile({ ...info, status: 'pending' })} />
       </RenderIf>
 
-      {uploadedFile ? <Editor file={uploadedFile} onRemove={() => setUploadedFile(null)} /> : null}
+      {
+        uploadedFile && uploadedFile.status === 'pending'
+          ? <Editor file={uploadedFile} onProcessed={handleProcessed} onRemove={() => setUploadedFile(null)} />
+          : null
+      }
+
+      {
+        uploadedFile && uploadedFile.status === 'processed'
+          ? <Preview id={uploadedFile.id} name={uploadedFile.name} onRemove={() => setUploadedFile(null)} />
+          : null
+      }
     </>
   );
 }

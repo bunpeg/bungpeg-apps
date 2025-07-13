@@ -1,8 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic';
-import { tryCatch } from '@bunpeg/helpers';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { CpuIcon, FileVideoIcon, Trash2Icon } from 'lucide-react';
 import {
   Button,
@@ -15,8 +14,12 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import type * as dashjs from 'dashjs';
 
 import { env } from '@/env';
-import { removeFile } from '@/utils/file-store';
-import { type StoredFile, type UserFile, type VideoMeta } from '@/types';
+import { pollFileStatus } from '@/utils/api';
+import { appendFile, markFileAsProcessed, removeFile } from '@/utils/file-store';
+import { type StoredFile, type UserFile } from '@/types';
+import useFile from '@/utils/hooks/useFile';
+import useFileMeta from '@/utils/hooks/useFileMeta';
+import useDeleteFile from '@/utils/hooks/useDeleteFile';
 
 import Wrapper from './wrapper';
 
@@ -25,13 +28,13 @@ const DynamicDashVideoPlayer = dynamic(() => import('./dash-player'), { ssr: fal
 interface Props {
   file: StoredFile;
   onRemove: () => void;
+  onProcessed: (newFileId: string) => void;
 }
 
 interface TrimSegment {
   id: string;
   start: number;
   end: number;
-  type: 'keep' | 'delete';
 }
 
 interface DragState {
@@ -62,67 +65,99 @@ export default function Editor(props: Props) {
   const videoRef = useRef<dashjs.MediaPlayerClass>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
-  const { data: file, isLoading: isLoadingFileInfo, error: fileError } = useQuery<UserFile>({
-    queryKey: ['file', fileId],
-    queryFn: async () => {
-      const { data: response, error: reqError } = await tryCatch(
-        fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/files/${fileId}`),
-      );
+  const { data: file, isLoading: isLoadingFileInfo, error: fileError } = useFile(fileId);
 
-      if (reqError) throw reqError;
-
-      if (!response.ok || response.status === 400) {
-        throw new Error(`File ${fileId} does not exist.`);
-      }
-
-      const data = await response.json();
-      return data.file;
-    },
-    throwOnError: false,
-    refetchOnWindowFocus: false,
-  });
-
-  const { data: metadata, isLoading: isLoadingMeta, error: metaError } = useQuery<VideoMeta>({
-    queryKey: ['file', fileId, 'meta'],
-    queryFn: async () => {
-      const { data: response, error: reqError } = await tryCatch(
-        fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/meta/${fileId}`),
-      );
-
-      if (reqError) throw reqError;
-
-      if (!response.ok || response.status === 400) {
-        throw new Error(`File ${fileId} does not exist.`);
-      }
-
-      const data = await response.json();
-      return data.meta;
-    },
+  const { data: metadata, isLoading: isLoadingMeta, error: metaError } = useFileMeta(fileId, {
     enabled: !!file && !file.metadata,
-    throwOnError: false,
-    refetchOnWindowFocus: false,
-  });
+  })
 
-  const { mutate: deleteFile, isPending: isDeleting } = useMutation<void, Error, string, unknown>({
-    mutationFn: async () => {
-      const response = await fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/delete/${fileId}`, { method: 'DELETE' });
+  const { mutate: deleteFile, isPending: isDeleting } = useDeleteFile(fileId, props.onRemove);
+
+  const { mutate: removeSegments, isPending: isMerging } = useMutation<string, Error, Omit<TrimSegment, 'id'>[]>({
+    mutationFn: async (segments) => {
+      const response = await fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/chain`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          file_id: fileId,
+          operations: segments.map((seg) => ({
+            type: 'trim',
+            mode: 'append',
+            start: seg.start,
+            duration: seg.end - seg.start,
+            output_format: resolveFormat(fileName),
+            parent: fileId,
+          })),
+        }),
+      });
 
       if (!response.ok || response.status !== 200) {
-        throw new Error('Unable to delete the file');
+        throw new Error('Unable to chain the segments');
       }
+
+      await pollFileStatus(fileId);
+
+      const newFilesRes = await fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/files?parent=${fileId}`);
+
+      if (!newFilesRes.ok || newFilesRes.status !== 200) {
+        throw new Error('Unable to retreive the new segments');
+      }
+
+      const files = (await newFilesRes.json()).files as UserFile[];
+      if (files.length === 0) throw new Error('No files found');
+
+      const mergeRes = await fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/merge`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          file_ids: files.map((file) => file.id),
+          output_format: resolveFormat(fileName),
+          mode: 'append',
+          parent: fileId,
+        }),
+      });
+
+      if (!mergeRes.ok || mergeRes.status !== 200) {
+        throw new Error('Unable to merge the new segments');
+      }
+
+      await pollFileStatus(fileId);
+
+      const latestFilesRes = await fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/files?parent=${fileId}`);
+
+      if (!latestFilesRes.ok || latestFilesRes.status !== 200) {
+        throw new Error('Unable to retreive the latest files');
+      }
+
+      const latestFiles = (await latestFilesRes.json()).files as UserFile[];
+      if (latestFiles.length === 0) throw new Error('No files found');
+
+      const mergedFile = latestFiles.at(-1);
+      if (!mergedFile) throw new Error('Unable to find the merged file');
+
+      return mergedFile.id;
     },
-    onSuccess: async () => {
-      removeFile('trim', file!.id);
-      props.onRemove();
+    onSuccess: async (mergedFileId) => {
+      removeFile('trim', fileId);
+      appendFile('trim', mergedFileId, fileName);
+      markFileAsProcessed('trim', mergedFileId);
+      props.onProcessed(mergedFileId);
     },
     onError: (err) => {
-      toast.error('Failed to delete the file', { description: err.message });
+      toast.error('Failed to remove the segments', { description: err.message });
     },
   });
 
   // Timeline and segment marking UI to be implemented
   const meta = metadata ?? file?.metadata ?? null;
   const duration = meta?.duration ? Number(meta.duration) : 0;
+
+  const resolveFormat = (fileName: string) => {
+    const parts = fileName.split('.');
+    return parts.at(-1)!;
+  }
 
   const snapToGrid = useCallback((time: number) => {
     const gridSize = TIMELINE_CONFIG.GRID_INTERVAL;
@@ -259,7 +294,6 @@ export default function Editor(props: Props) {
               id: Math.random().toString(36).slice(2, 9),
               start: previewSegment.start,
               end: previewSegment.end,
-              type: 'delete',
             };
             setSegments(prev => [...prev, newSegment]);
           }
@@ -381,6 +415,38 @@ export default function Editor(props: Props) {
     setSegments((prev) => prev.filter((seg) => seg.id !== segmentId))
   }
 
+  const processFile = () => {
+    const markers = segments.toSorted((a, b) => a.start - b.start).reduce((acc, seg, index) => {
+      const isLast = index === segments.length - 1;
+
+      if (seg.start === 0) {
+        return [...acc, seg.end];
+      }
+
+      if (seg.end === Number(duration.toFixed(0))) {
+        return [...acc, seg.start, duration];
+      }
+
+      if (isLast) {
+        return [...acc, seg.start, seg.end, duration];
+      }
+
+      return [...acc, seg.start, seg.end];
+
+    }, [0] as number[]);
+
+    const keepSegments = markers.reduce((acc, marker, index) => {
+      if (index % 2 === 0) {
+        if (markers[index + 1] === undefined) return acc;
+
+        return [...acc, { start: marker, end: markers[index + 1]! }];
+      }
+      return acc;
+    }, [] as Omit<TrimSegment, 'id'>[]);
+
+    removeSegments(keepSegments);
+  };
+
   const error = fileError ?? metaError;
 
   if (isLoadingFileInfo || isLoadingMeta) {
@@ -390,13 +456,24 @@ export default function Editor(props: Props) {
           <FileVideoIcon className="size-5 mt-1" />
           <div className="flex flex-col gap-1">
             <span>{fileName}</span>
-            {error && (
-              <span className="text-xs text-red-500">{error.message}</span>
-            )}
           </div>
           <RenderIf condition={!error}>
             <Loader size="icon" color="primary" className="ml-auto" />
           </RenderIf>
+        </div>
+      </Wrapper>
+    );
+  }
+
+  if (error) {
+    return (
+      <Wrapper>
+        <div className="border flex gap-2 p-4">
+          <FileVideoIcon className="size-5 mt-1" />
+          <div className="flex flex-col gap-1">
+            <span>{fileName}</span>
+            <span className="text-xs text-red-500">{error.message}</span>
+          </div>
         </div>
       </Wrapper>
     );
@@ -414,8 +491,8 @@ export default function Editor(props: Props) {
     <Wrapper
       action={
         <div className="flex items-center gap-1">
-          <Button>
-            <CpuIcon className="size-4 mr-2" />
+          <Button variant="outline" onClick={processFile} disabled={isMerging || isDeleting}>
+            {isMerging ? <Loader size="icon" color="white" className="mr-2" /> : <CpuIcon className="size-4 mr-2" />}
             Process
           </Button>
           <Button
@@ -423,7 +500,7 @@ export default function Editor(props: Props) {
             variant="outline"
             className="ml-auto"
             onClick={() => deleteFile(file.id)}
-            disabled={isDeleting}
+            disabled={isDeleting || isMerging}
           >
             <Trash2Icon className="size-4" />
           </Button>

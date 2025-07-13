@@ -11,6 +11,7 @@ import { VIDEO_MIME_TYPES } from '@/utils/formats';
 import FileUploadCard from '@/components/file-upload';
 
 import Wrapper from './wrapper';
+import { pollFileStatus } from '@/utils/api';
 
 interface Props {
   onSuccess: (file: { id: string; name: string }) => void;
@@ -48,23 +49,7 @@ export default function Uploader(props: Props) {
         throw new Error('DASH processing failed');
       }
 
-      const checkFileStatus = async () => {
-        const { data: statusRes, error: statusErr } = await tryCatch(fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/status/${fileId}`));
-
-        if (statusErr) return { success: false };
-
-        const status = (await statusRes.json()).status;
-
-        if (status === 'processing') throw new Error('File processing pending');
-
-        return { success: status === 'completed' };
-      };
-
-      const pollRes = await poll(() => checkFileStatus(), 1000);
-
-      if (!pollRes.success) {
-        throw new Error('Failed to generate the DASH files for the stream');
-      }
+      await pollFileStatus(fileId);
 
       appendFile('trim', fileId, file.name);
       onSuccess({ id: fileId, name: file.name });
