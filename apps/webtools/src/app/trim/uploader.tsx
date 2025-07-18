@@ -9,9 +9,9 @@ import { env } from '@/env';
 import { appendFile } from '@/utils/file-store';
 import { VIDEO_MIME_TYPES } from '@/utils/formats';
 import FileUploadCard from '@/components/file-upload';
+import { pollFileStatus } from '@/utils/api';
 
 import Wrapper from './wrapper';
-import { pollFileStatus } from '@/utils/api';
 
 interface Props {
   onSuccess: (file: { id: string; name: string }) => void;
@@ -39,7 +39,7 @@ export default function Uploader(props: Props) {
 
       const fileId = (await uploadRes.json()).fileId as string;
 
-      const { data: dashRes, error: dashErr } = await tryCatch(fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/dash/${fileId}/process`));
+      const { data: dashRes, error: dashErr } = await tryCatch(fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/dash/${fileId}`));
 
       if (dashErr) throw dashErr;
 

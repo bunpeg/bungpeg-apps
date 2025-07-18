@@ -6,7 +6,7 @@ export async function pollFileStatus(fileId: string) {
   const pollRes = await poll(() => checkFileStatus(fileId), 1000);
 
   if (!pollRes.success) {
-    throw new Error('Failed to generate the DASH files for the stream');
+    throw new Error(`Failed to process the file ${fileId}`);
   }
 
   return pollRes;

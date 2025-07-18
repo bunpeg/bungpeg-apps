@@ -7,29 +7,28 @@ import { CloudDownloadIcon, FileVideoIcon, Loader, Trash2Icon } from 'lucide-rea
 import { env } from '@/env';
 import useFile from '@/utils/hooks/useFile';
 import useFileMeta from '@/utils/hooks/useFileMeta';
-import useDeleteFile from '@/utils/hooks/useDeleteFile';
+import { type StoredFile } from '@/types';
 
 import Wrapper from './wrapper';
 
 const DynamicDashVideoPlayer = dynamic(() => import('./dash-player'), { ssr: false });
 
 interface Props {
-  id: string;
-  name: string;
+  file: StoredFile;
+  isDeleting: boolean;
   onRemove: () => void;
 }
 
 export default function Preview(props: Props) {
-  const fileId = props.id;
-  const fileName = props.name;
+  const { isDeleting, onRemove } = props;
+  const fileId = props.file.id;
+  const fileName = props.file.name;
 
   const { data: file, isLoading: isLoadingFileInfo, error: fileError } = useFile(fileId);
 
   const { data: metadata, isLoading: isLoadingMeta, error: metaError } = useFileMeta(fileId, {
     enabled: !!file && !file.metadata,
   })
-
-  const { mutate: deleteFile, isPending: isDeleting } = useDeleteFile(fileId, props.onRemove);
 
   const error = fileError ?? metaError;
 
@@ -91,7 +90,7 @@ export default function Preview(props: Props) {
             size="icon"
             variant="outline"
             className="ml-auto"
-            onClick={() => deleteFile(file.id)}
+            onClick={onRemove}
             disabled={isDeleting}
           >
             <Trash2Icon className="size-4" />
@@ -101,7 +100,7 @@ export default function Preview(props: Props) {
     >
       <div className="flex flex-col gap-4 border-t pt-4">
         {/* Uploaded File Info */}
-        <div>
+        <div className="flex flex-col">
           <span className="tex-sm">{file.file_name}</span>
           <span className="text-sm text-gray-500">
             ID: {file.id}

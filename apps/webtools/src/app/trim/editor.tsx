@@ -15,11 +15,10 @@ import type * as dashjs from 'dashjs';
 
 import { env } from '@/env';
 import { pollFileStatus } from '@/utils/api';
-import { appendFile, markFileAsProcessed, removeFile } from '@/utils/file-store';
+import { appendFile, markFileAsProcessed } from '@/utils/file-store';
 import { type StoredFile, type UserFile } from '@/types';
 import useFile from '@/utils/hooks/useFile';
 import useFileMeta from '@/utils/hooks/useFileMeta';
-import useDeleteFile from '@/utils/hooks/useDeleteFile';
 
 import Wrapper from './wrapper';
 
@@ -27,6 +26,7 @@ const DynamicDashVideoPlayer = dynamic(() => import('./dash-player'), { ssr: fal
 
 interface Props {
   file: StoredFile;
+  isDeleting: boolean;
   onRemove: () => void;
   onProcessed: (newFileId: string) => void;
 }
@@ -52,6 +52,7 @@ const TIMELINE_CONFIG = {
 } as const;
 
 export default function Editor(props: Props) {
+  const { isDeleting, onRemove } = props;
   const fileId = props.file.id;
   const fileName = props.file.name;
 
@@ -69,9 +70,7 @@ export default function Editor(props: Props) {
 
   const { data: metadata, isLoading: isLoadingMeta, error: metaError } = useFileMeta(fileId, {
     enabled: !!file && !file.metadata,
-  })
-
-  const { mutate: deleteFile, isPending: isDeleting } = useDeleteFile(fileId, props.onRemove);
+  });
 
   const { mutate: removeSegments, isPending: isMerging } = useMutation<string, Error, Omit<TrimSegment, 'id'>[]>({
     mutationFn: async (segments) => {
@@ -137,10 +136,17 @@ export default function Editor(props: Props) {
       const mergedFile = latestFiles.at(-1);
       if (!mergedFile) throw new Error('Unable to find the merged file');
 
+      const dashRes = await fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/dash/${mergedFile.id}`);
+
+      if (!dashRes.ok || dashRes.status !== 200) {
+        throw new Error('Unable to generate the dash files for the newly cut video');
+      }
+
+      await pollFileStatus(fileId);
+
       return mergedFile.id;
     },
     onSuccess: async (mergedFileId) => {
-      removeFile('trim', fileId);
       appendFile('trim', mergedFileId, fileName);
       markFileAsProcessed('trim', mergedFileId);
       props.onProcessed(mergedFileId);
@@ -416,33 +422,36 @@ export default function Editor(props: Props) {
   }
 
   const processFile = () => {
-    const markers = segments.toSorted((a, b) => a.start - b.start).reduce((acc, seg, index) => {
+    const inverseMarkers = segments.toSorted((a, b) => a.start - b.start).reduce((acc, seg, index, list) => {
+      const isFirst = index === 0;
       const isLast = index === segments.length - 1;
 
-      if (seg.start === 0) {
-        return [...acc, seg.end];
+      if (isFirst) {
+        if (seg.start === 0) {
+          return [seg.end];
+        }
+
+        return [0, seg.start, seg.end, list[index + 1]!.start];
       }
 
-      if (seg.end === Number(duration.toFixed(0))) {
-        return [...acc, seg.start, duration];
+      if (Number(seg.end.toFixed(0)) === Number(duration.toFixed(0))) {
+        return acc;
       }
 
       if (isLast) {
-        return [...acc, seg.start, seg.end, duration];
+        return [...acc, seg.end, duration];
       }
 
-      return [...acc, seg.start, seg.end];
+      return [...acc, seg.end, list[index + 1]!.start];
 
-    }, [0] as number[]);
+    }, [] as number[]);
 
-    const keepSegments = markers.reduce((acc, marker, index) => {
-      if (index % 2 === 0) {
-        if (markers[index + 1] === undefined) return acc;
+    const keepSegments: { start: number, end: number }[] = [];
+    for (let i = 0; i < inverseMarkers.length; i += 2) {
+      if (inverseMarkers[i + 1] === undefined) break;
 
-        return [...acc, { start: marker, end: markers[index + 1]! }];
-      }
-      return acc;
-    }, [] as Omit<TrimSegment, 'id'>[]);
+      keepSegments.push({ start: inverseMarkers[i]!, end: inverseMarkers[i + 1]! });
+    }
 
     removeSegments(keepSegments);
   };
@@ -487,19 +496,21 @@ export default function Editor(props: Props) {
     );
   }
 
+  const hasSegments = segments.length > 0;
+
   return (
     <Wrapper
       action={
         <div className="flex items-center gap-1">
-          <Button variant="outline" onClick={processFile} disabled={isMerging || isDeleting}>
-            {isMerging ? <Loader size="icon" color="white" className="mr-2" /> : <CpuIcon className="size-4 mr-2" />}
+          <Button variant="outline" onClick={processFile} disabled={!hasSegments || isMerging || isDeleting}>
+            {isMerging ? <Loader size="icon" color="primary" className="mr-2" /> : <CpuIcon className="size-4 mr-2" />}
             Process
           </Button>
           <Button
             size="icon"
             variant="outline"
             className="ml-auto"
-            onClick={() => deleteFile(file.id)}
+            onClick={onRemove}
             disabled={isDeleting || isMerging}
           >
             <Trash2Icon className="size-4" />
