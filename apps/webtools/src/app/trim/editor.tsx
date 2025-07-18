@@ -82,6 +82,7 @@ export default function Editor(props: Props) {
           operations: segments.map((seg) => ({
             type: 'trim',
             mode: 'append',
+            exact: true,
             start: seg.start,
             duration: seg.end - seg.start,
             output_format: resolveFormat(fileName),
@@ -102,38 +103,45 @@ export default function Editor(props: Props) {
         throw new Error('Unable to retreive the new segments');
       }
 
+      let mergedFile;
+
       const files = (await newFilesRes.json()).files as UserFile[];
       if (files.length === 0) throw new Error('No files found');
 
-      const mergeRes = await fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/merge`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          file_ids: files.map((file) => file.id),
-          output_format: resolveFormat(fileName),
-          mode: 'append',
-          parent: fileId,
-        }),
-      });
+      if (files.length === 1) {
+        mergedFile = files.at(-1);
+      } else {
+        const mergeRes = await fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/merge`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            file_ids: files.map((file) => file.id),
+            output_format: resolveFormat(fileName),
+            mode: 'append',
+            parent: fileId,
+          }),
+        });
 
-      if (!mergeRes.ok || mergeRes.status !== 200) {
-        throw new Error('Unable to merge the new segments');
+        if (!mergeRes.ok || mergeRes.status !== 200) {
+          throw new Error('Unable to merge the new segments');
+        }
+
+        await pollFileStatus(fileId);
+
+        const latestFilesRes = await fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/files?parent=${fileId}`);
+
+        if (!latestFilesRes.ok || latestFilesRes.status !== 200) {
+          throw new Error('Unable to retreive the latest files');
+        }
+
+        const latestFiles = (await latestFilesRes.json()).files as UserFile[];
+        if (latestFiles.length === 0) throw new Error('No files found');
+
+        mergedFile = latestFiles.at(-1);
       }
 
-      await pollFileStatus(fileId);
-
-      const latestFilesRes = await fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/files?parent=${fileId}`);
-
-      if (!latestFilesRes.ok || latestFilesRes.status !== 200) {
-        throw new Error('Unable to retreive the latest files');
-      }
-
-      const latestFiles = (await latestFilesRes.json()).files as UserFile[];
-      if (latestFiles.length === 0) throw new Error('No files found');
-
-      const mergedFile = latestFiles.at(-1);
       if (!mergedFile) throw new Error('Unable to find the merged file');
 
       const dashRes = await fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/dash/${mergedFile.id}`);
@@ -143,7 +151,6 @@ export default function Editor(props: Props) {
       }
 
       await pollFileStatus(fileId);
-
       return mergedFile.id;
     },
     onSuccess: async (mergedFileId) => {
@@ -428,7 +435,7 @@ export default function Editor(props: Props) {
 
       if (isFirst) {
         if (seg.start === 0) {
-          return [seg.end];
+          return [seg.end, list[index + 1]!.start];
         }
 
         return [0, seg.start, seg.end, list[index + 1]!.start];
