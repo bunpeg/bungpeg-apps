@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useMutation } from '@tanstack/react-query';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { CpuIcon, FileVideoIcon, Trash2Icon } from 'lucide-react';
 import {
   Button,
@@ -10,7 +11,7 @@ import {
   RenderIf,
   toast,
 } from '@bunpeg/ui';
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { tryCatch } from '@bunpeg/helpers';
 import type * as dashjs from 'dashjs';
 
 import { env } from '@/env';
@@ -428,10 +429,27 @@ export default function Editor(props: Props) {
     setSegments((prev) => prev.filter((seg) => seg.id !== segmentId))
   }
 
-  const processFile = () => {
+  const resolveMarkers = async () => {
     const inverseMarkers = segments.toSorted((a, b) => a.start - b.start).reduce((acc, seg, index, list) => {
       const isFirst = index === 0;
       const isLast = index === segments.length - 1;
+
+      if (list.length === 1) {
+        if (seg.start === 0 && Number(seg.end.toFixed(0)) === Number(duration.toFixed(0))) {
+          toast.error('Error', {
+            description: 'The segment can not cover the whole file',
+          });
+          throw new Error('Segment covers whole file');
+        }
+
+        if (seg.start === 0) {
+          return [seg.end, duration];
+        }
+
+        if (Number(seg.end.toFixed(0)) === Number(duration.toFixed(0))) {
+          return [0, seg.start];
+        }
+      }
 
       if (isFirst) {
         if (seg.start === 0) {
@@ -452,6 +470,16 @@ export default function Editor(props: Props) {
       return [...acc, seg.end, list[index + 1]!.start];
 
     }, [] as number[]);
+    return inverseMarkers;
+  }
+
+  const processFile = async () => {
+    const { data: inverseMarkers, error } = await tryCatch(resolveMarkers());
+
+    if (error) {
+      console.error(error);
+      return;
+    }
 
     const keepSegments: { start: number, end: number }[] = [];
     for (let i = 0; i < inverseMarkers.length; i += 2) {

@@ -18,20 +18,6 @@ export default function TrimPage() {
 
   const { mutateAsync: deleteFile, isPending: isDeleting } = useDeleteFile();
 
-  const handleDelete = async () => {
-    if (!uploadedFile) return;
-    const { error } = await tryCatch(deleteFile(uploadedFile.id));
-
-    if (error) {
-      console.error('Error deleting file:', error);
-      return;
-    }
-
-    removeFile('trim', uploadedFile.id);
-    setUploadedFile(null);
-    setProcessedFile(null);
-  };
-
   useEffect(() => {
     const storedFiles = retrieveFiles('trim');
     if (!uploadedFile && storedFiles.length > 0) {
@@ -49,22 +35,41 @@ export default function TrimPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const handleUpload = (info: { id: string; name: string }) => {
+    setUploadedFile({ ...info, status: 'pending' });
+    setView('process');
+  };
+
   const handleProcessed = (mergedFileId: string) => {
     if (!uploadedFile) return;
     setProcessedFile({ ...uploadedFile, id: mergedFileId, status: 'processed' });
     setView('preview');
   }
 
+  const handleDelete = async () => {
+    if (!uploadedFile) return;
+    const { error } = await tryCatch(deleteFile(uploadedFile.id));
+
+    if (error) {
+      console.error('Error deleting file:', error);
+      return;
+    }
+
+    removeFile('trim', uploadedFile.id);
+    setUploadedFile(null);
+    setProcessedFile(null);
+  };
+
   const renderView = () => {
     if (view === 'preview' && processedFile) {
       return <Preview file={processedFile} isDeleting={isDeleting} onRemove={handleDelete} />;
     }
 
-    if (view === 'upload' && uploadedFile) {
+    if (view === 'process' && uploadedFile) {
       return <Editor file={uploadedFile} onProcessed={handleProcessed} isDeleting={isDeleting} onRemove={handleDelete} />;
     }
 
-    return <Uploader onSuccess={(info) => setUploadedFile({ ...info, status: 'pending' })} />;
+    return <Uploader onSuccess={handleUpload} />;
   };
 
   return <>{renderView()}</>;
