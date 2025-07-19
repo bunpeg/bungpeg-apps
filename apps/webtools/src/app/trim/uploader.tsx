@@ -1,15 +1,17 @@
 'use client'
 
-import { tryCatch } from '@bunpeg/helpers';
+import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Loader, RenderIf, toast } from '@bunpeg/ui';
-import { FileVideoIcon } from 'lucide-react';
+import { tryCatch } from '@bunpeg/helpers';
+import { Button, Loader, RenderIf, toast } from '@bunpeg/ui';
+import { FileVideoIcon, Trash2Icon } from 'lucide-react';
 
 import { env } from '@/env';
 import { appendFile } from '@/utils/file-store';
 import { VIDEO_MIME_TYPES } from '@/utils/formats';
-import FileUploadCard from '@/components/file-upload';
 import { pollFileStatus } from '@/utils/api';
+import useDeleteFile from '@/utils/hooks/useDeleteFile';
+import FileUploadCard from '@/components/file-upload';
 
 import Wrapper from './wrapper';
 
@@ -19,11 +21,13 @@ interface Props {
 
 export default function Uploader(props: Props) {
   const { onSuccess } = props;
+  const [localFileId, setLocalFileId] = useState<string | null>(null);
 
   const {
     mutate: upload,
     variables: localFile,
     error: mutationError,
+    reset,
   } = useMutation<void, Error, File, unknown>({
     mutationFn: async (file) => {
       const formData = new FormData();
@@ -38,6 +42,7 @@ export default function Uploader(props: Props) {
       if (reqError) throw reqError;
 
       const fileId = (await uploadRes.json()).fileId as string;
+      setLocalFileId(fileId);
 
       const { data: dashRes, error: dashErr } = await tryCatch(fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/dash/${fileId}`));
 
@@ -56,6 +61,8 @@ export default function Uploader(props: Props) {
     },
   });
 
+  const { mutateAsync: deleteFile, isPending: isDeleting } = useDeleteFile();
+
   const handleLocalFileUpload = async (files: File[]) => {
     const file = files[0];
     if (!file) return;
@@ -68,6 +75,12 @@ export default function Uploader(props: Props) {
     }
 
     upload(file);
+  };
+
+  const handleDelete = async () => {
+    if (!localFileId) return;
+    await deleteFile(localFileId);
+    reset();
   };
 
   if (!localFile) {
@@ -84,7 +97,21 @@ export default function Uploader(props: Props) {
   }
 
   return (
-    <Wrapper>
+    <Wrapper
+      action={localFileId && mutationError ? (
+        <div className="flex items-center gap-1">
+          <Button
+            size="icon"
+            variant="outline"
+            className="ml-auto"
+            onClick={handleDelete}
+            disabled={isDeleting}
+          >
+            <Trash2Icon className="size-4" />
+          </Button>
+        </div>
+      ) : null}
+    >
       <div className="border flex gap-2 p-4">
         <FileVideoIcon className="size-5 mt-1" />
         <div className="flex flex-col gap-1">

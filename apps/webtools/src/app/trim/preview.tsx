@@ -10,6 +10,7 @@ import useFileMeta from '@/utils/hooks/useFileMeta';
 import { type StoredFile } from '@/types';
 
 import Wrapper from './wrapper';
+import { buildCdnUrl } from '@/utils/api';
 
 const DynamicDashVideoPlayer = dynamic(() => import('./dash-player'), { ssr: false });
 
@@ -117,9 +118,4 @@ export default function Preview(props: Props) {
       </div>
     </Wrapper>
   );
-}
-
-function buildCdnUrl(fileId: string) {
-  // https://bunpeg.fra1.cdn.digitaloceanspaces.com/:file_id/dash/manifesto.mpd
-  return `https://bunpeg.fra1.cdn.digitaloceanspaces.com/${fileId}/dash/manifesto.mpd`;
 }
