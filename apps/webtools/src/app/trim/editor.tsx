@@ -564,6 +564,7 @@ export default function Editor(props: Props) {
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           onTimeUpdate={(e) => setCurrentTime((e.target as HTMLVideoElement).currentTime)}
+          className="max-h-[calc(100vh_-_200px)]"
         />
 
         {/* Timeline for Segment Selection */}

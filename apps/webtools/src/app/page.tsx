@@ -15,7 +15,7 @@ export default async function Home() {
     <section className="py-12 md:py-20">
       <div className="mx-auto max-w-5xl px-6">
         <div className="relative z-10 mx-auto max-w-2xl flex flex-col items-center text-center space-y-12 mb-10">
-          <h2 className="text-balance text-4xl font-medium lg:text-6xl ">Bunpeg webtools</h2>
+          <h2 className="text-balance text-4xl font-medium md:text-6xl ">Bunpeg webtools</h2>
           <p>
             These are a collection of tools based on Bunpeg to manipulate video & audio.
           </p>

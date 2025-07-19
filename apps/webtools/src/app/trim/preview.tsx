@@ -113,7 +113,7 @@ export default function Preview(props: Props) {
           </span>
         </div>
 
-        <DynamicDashVideoPlayer controls src={buildCdnUrl(fileId)} />
+        <DynamicDashVideoPlayer controls src={buildCdnUrl(fileId)} className="max-h-[calc(100vh_-_200px)]" />
       </div>
     </Wrapper>
   );
