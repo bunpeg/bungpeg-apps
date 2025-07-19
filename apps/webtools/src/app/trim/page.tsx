@@ -24,11 +24,13 @@ export default function TrimPage() {
       const __uploadedFile = storedFiles.find(file => file.status === 'pending');
       if (__uploadedFile) {
         setUploadedFile(__uploadedFile);
+        setView('process');
       }
 
       const __processedFile = storedFiles.find(file => file.status === 'processed');
       if (__processedFile) {
         setProcessedFile(__processedFile);
+        setView('preview');
       }
     }
     // this is only meant to run once on start
@@ -56,8 +58,11 @@ export default function TrimPage() {
     }
 
     removeFile('trim', uploadedFile.id);
+    if (processedFile) removeFile('trim', processedFile.id);
+
     setUploadedFile(null);
     setProcessedFile(null);
+    setView('upload');
   };
 
   const renderView = () => {
