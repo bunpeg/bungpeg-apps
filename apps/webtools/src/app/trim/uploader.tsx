@@ -1,6 +1,6 @@
 'use client'
 
-import { poll, tryCatch } from '@bunpeg/helpers';
+import { tryCatch } from '@bunpeg/helpers';
 import { useMutation } from '@tanstack/react-query';
 import { Loader, RenderIf, toast } from '@bunpeg/ui';
 import { FileVideoIcon } from 'lucide-react';
