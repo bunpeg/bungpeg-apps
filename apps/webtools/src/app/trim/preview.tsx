@@ -5,12 +5,12 @@ import { Button, RenderIf } from '@bunpeg/ui';
 import { CloudDownloadIcon, FileVideoIcon, Loader, Trash2Icon } from 'lucide-react';
 
 import { env } from '@/env';
+import { type StoredFile } from '@/types';
+import { buildCdnUrl } from '@/utils/api';
 import useFile from '@/utils/hooks/useFile';
 import useFileMeta from '@/utils/hooks/useFileMeta';
-import { type StoredFile } from '@/types';
 
 import Wrapper from './wrapper';
-import { buildCdnUrl } from '@/utils/api';
 
 const DynamicDashVideoPlayer = dynamic(() => import('./dash-player'), { ssr: false });
 

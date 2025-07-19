@@ -26,7 +26,5 @@ const checkFileStatus = async (fileId: string) => {
 
 export function buildCdnUrl(fileId: string) {
   // https://bunpeg.fra1.cdn.digitaloceanspaces.com/:file_id/dash/manifesto.mpd
-  // https://bunpeg.fra1.cdn.digitaloceanspaces.com/rEjWHOj9/dash/manifesto.mpd - bad one
-  // https://bunpeg.fra1.cdn.digitaloceanspaces.com/bunpeg/rEjWHOj9/dash/manifesto.mpd - good one
   return `https://bunpeg.fra1.cdn.digitaloceanspaces.com/${fileId}/dash/manifesto.mpd`;
 }
