@@ -1,8 +1,7 @@
 'use client';
 import { useTheme } from 'next-themes';
-import { MonitorCogIcon, MoonIcon, SunIcon } from 'lucide-react';
-
 import { Button } from '@bunpeg/ui';
+import { MonitorCogIcon, MoonIcon, SunIcon } from 'lucide-react';
 
 export default function DefaultThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -22,7 +21,7 @@ export default function DefaultThemeToggle() {
   };
 
   return (
-    <div className="fixed top-2 right-4 z-50 pl-4 pb-2 flex items-center gap-0.5 bg-background">
+    <div className="absolute top-2 right-4 z-50 pl-4 pb-2 flex items-center gap-0.5 bg-background">
       <Button size="sm" variant="ghost" className="block md:hidden" onClick={switchTheme}>
         {theme === 'system' && <MonitorCogIcon className="size-5" />}
         {theme === 'light' && <SunIcon className="size-5" />}

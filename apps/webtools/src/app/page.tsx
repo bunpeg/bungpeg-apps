@@ -10,6 +10,8 @@ import {
 import { Button, RenderIf, Separator } from '@bunpeg/ui';
 import { GitHubIcon } from '@bunpeg/ui/icons';
 
+import ViewSizeGuard from '@/components/view-size-guard';
+
 export default async function Home() {
   return (
     <section className="py-12 md:py-20">
@@ -21,14 +23,16 @@ export default async function Home() {
           </p>
         </div>
 
-        <div data-el="tools" className="relative mx-auto grid gap-4 md:gap-1 max-w-4xl sm:grid-cols-2 lg:grid-cols-3">
-          <Toolbox link="/trim" title="Trim" description="Trim video & audio files lengths" icon={<ScissorsLineDashedIcon className="size-4" />} />
-          <Toolbox link="/scale" title="Scale" description="Change the scale & aspect ration of video files" icon={<ExpandIcon className="size-4" />} />
-          <Toolbox link="/transcode" title="Change formats" description="Transcode video files to other formats" icon={<Settings2Icon className="size-4" />} />
-          <Toolbox link="/extract-audio" title="Extract audio" description="Extract the audio track from video files" icon={<FileAudioIcon className="size-4" />} />
-          <Toolbox link="/remove-audio" title="Remove audio" description="Remove the audio track from video files" icon={<VolumeOffIcon className="size-4" />} />
-          <Toolbox title="Extract thumbnail" description="Select and extract any frame as thumbnail" icon={<ImagePlusIcon className="size-4" />} comingSoon />
-        </div>
+        <ViewSizeGuard>
+          <div data-el="tools" className="relative mx-auto grid gap-4 md:gap-1 max-w-4xl sm:grid-cols-2 lg:grid-cols-3">
+            <Toolbox link="/trim" title="Trim" description="Trim video files lengths" icon={<ScissorsLineDashedIcon className="size-4" />} />
+            <Toolbox link="/scale" title="Scale" description="Change the scale & aspect ration of video files" icon={<ExpandIcon className="size-4" />} />
+            <Toolbox link="/transcode" title="Change formats" description="Transcode video files to other formats" icon={<Settings2Icon className="size-4" />} />
+            <Toolbox link="/extract-audio" title="Extract audio" description="Extract the audio track from video files" icon={<FileAudioIcon className="size-4" />} />
+            <Toolbox link="/remove-audio" title="Remove audio" description="Remove the audio track from video files" icon={<VolumeOffIcon className="size-4" />} />
+            <Toolbox title="Extract thumbnail" description="Select and extract any frame as thumbnail" icon={<ImagePlusIcon className="size-4" />} comingSoon />
+          </div>
+        </ViewSizeGuard>
 
         <footer className="mx-auto max-w-4xl flex justify-center items-center gap-2 mt-5">
           <a href="https://github.com/bunpeg/bunpeg" target="_blank" rel="noopener noreferrer">
