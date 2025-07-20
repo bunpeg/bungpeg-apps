@@ -252,15 +252,13 @@ export default function Editor(props: Props) {
     >
       <div className="flex flex-col border">
         {/* Current File Info */}
-        <div className="flex gap-2 p-4">
-          <div className="flex flex-col gap-1">
-            <span>{fileName}</span>
-            <span className="text-xs text-muted-foreground">
-              Current resolution: {currentResolution.width}x{currentResolution.height}
-              {meta?.duration ? ` | Duration: ${Number(meta.duration).toFixed(2)}s` : ''}
-              {meta?.size ? ` | Size: ${(meta.size / 1024 / 1024).toFixed(2)}MB` : ''}
-            </span>
-          </div>
+        <div className="flex flex-col gap-1 p-4">
+          <span>{fileName}</span>
+          <span className="text-xs text-muted-foreground">
+            Current resolution: {currentResolution.width}x{currentResolution.height}
+            {meta?.duration ? ` | Duration: ${Number(meta.duration).toFixed(2)}s` : ''}
+            {meta?.size ? ` | Size: ${(meta.size / 1024 / 1024).toFixed(2)}MB` : ''}
+          </span>
         </div>
 
         <div className="h-5 w-full stripped-bg border-t border-b my-2" />

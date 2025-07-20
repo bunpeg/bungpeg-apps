@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Button, Loader, RenderIf, toast } from '@bunpeg/ui';
+import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, Loader, RenderIf, toast } from '@bunpeg/ui';
 import { ArrowLeftIcon, CpuIcon } from 'lucide-react';
 import { append, applyWhere, remove, tryCatch } from '@bunpeg/helpers';
 import { nanoid } from 'nanoid';
@@ -20,8 +20,8 @@ export default function TranscodePage() {
   const [localFiles, setLocalFiles] = useState<{ id: string; file: File }[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<StoredFile[]>([]);
 
-  const { mutate: process } = useMutation({
-    mutationFn: async () => {
+  const { mutate: process } = useMutation<void, Error, string>({
+    mutationFn: async (format) => {
       const pendingFiles = uploadedFiles.filter((f) => f.status === 'pending');
 
       if (pendingFiles.length === 0) {
@@ -36,9 +36,7 @@ export default function TranscodePage() {
             file_ids: pendingFiles.map(f => f.id),
             operation: {
               type: 'transcode',
-              format: 'mp4',
-              video_codec: 'h264',
-              audio_codec: 'aac',
+              format,
             },
           })
         })
@@ -131,14 +129,38 @@ export default function TranscodePage() {
         </div>
         <RenderIf condition={hasFiles}>
           <div className="flex items-center gap-1">
-            <Button variant="outline" onClick={() => process()} disabled={isProcessing}>
-              {
-                isProcessing
-                  ? <Loader size="icon" color="primary" className="mr-2" />
-                  : <CpuIcon className="size-4 mr-2" />
-              }
-              Process
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild disabled={isProcessing}>
+                <Button variant="outline">
+                  {
+                    isProcessing
+                      ? <Loader size="icon" color="primary" className="mr-2" />
+                      : <CpuIcon className="size-4 mr-2" />
+                  }
+                  Process
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Formats</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => process('mp4')}>
+                    .mp4
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => process('webm')}>
+                    .webm
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => process('mkv')}>
+                    .mkv
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => process('avi')}>
+                    .avi
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => process('mov')}>
+                    .mov
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <UploadButton multiple accept={VIDEO_MIME_TYPES} onSuccess={handleLocalFileUpload} />
           </div>
         </RenderIf>
@@ -151,81 +173,104 @@ export default function TranscodePage() {
           multiple
         />
       </RenderIf>
-      <div className="flex flex-col gap-8">
-        {localFiles.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <span>Uploading...</span>
-            {localFiles.map(({ id: localId, file }) => (
-              <UploadFileCard
-                key={localId}
-                file={file}
-                store="transcode"
-                onSuccess={(fileId) => handleUploadFile(localId, fileId, file.name)}
-              />
-            ))}
-          </div>
-        )}
 
-        {pendingFiles.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <span>Uploaded</span>
-            {pendingFiles.map((file) => (
-              <DbFileCard
-                {...file}
-                key={file.id}
-                store="transcode"
-                onRemove={handleRemoveFile}
-              />
-            ))}
-          </div>
-        )}
+      {hasFiles ? (
+        <div className="flex flex-col border-t border-r border-l">
+          {localFiles.length > 0 && (
+            <div className="flex flex-col">
+              <span className="p-4">Uploading...</span>
+              <div className="h-5 w-full stripped-bg border-t border-b" />
+              {localFiles.map(({ id: localId, file }, index, list) => (
+                <Fragment key={localId}>
+                  <UploadFileCard
+                    file={file}
+                    store="transcode"
+                    onSuccess={(fileId) => handleUploadFile(localId, fileId, file.name)}
+                  />
+                  {index !== list.length - 1 && <div className="h-5 w-full stripped-bg border-t border-b" />}
+                </Fragment>
+              ))}
+              <div className="h-5 w-full stripped-bg border-t border-b" />
+            </div>
+          )}
 
-        {processingFiles.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <span>Processing</span>
-            {processingFiles.map((file) => (
-              <DbFileCard
-                {...file}
-                processing
-                key={file.id}
-                store="transcode"
-                onRemove={handleRemoveFile}
-                onSuccess={handleProcessedFile}
-                onError={handleFailedFile}
-              />
-            ))}
-          </div>
-        )}
+          {pendingFiles.length > 0 && (
+            <div className="flex flex-col">
+              <span className="p-4">Uploaded</span>
+              <div className="h-5 w-full stripped-bg border-t border-b" />
+              {pendingFiles.map((file, index, list) => (
+                <Fragment key={file.id}>
+                  <DbFileCard
+                    {...file}
+                    store="transcode"
+                    onRemove={handleRemoveFile}
+                  />
+                  {index !== list.length - 1 && <div className="h-5 w-full stripped-bg border-t border-b" />}
+                </Fragment>
+              ))}
+              <div className="h-5 w-full stripped-bg border-t border-b" />
+            </div>
+          )}
 
-        {processedFiles.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <span>Processed</span>
-            {processedFiles.map((file) => (
-              <DbFileCard
-                {...file}
-                processed
-                key={`${file.id}-processed`}
-                store="transcode"
-                onRemove={handleRemoveFile}
-              />
-            ))}
-          </div>
-        )}
+          {processingFiles.length > 0 && (
+            <div className="flex flex-col">
+              <span className="p-4">Processing</span>
+              <div className="h-5 w-full stripped-bg border-t border-b" />
+              {processingFiles.map((file, index, list) => (
+                <Fragment key={file.id}>
+                  <DbFileCard
+                    {...file}
+                    processing
+                    store="transcode"
+                    onRemove={handleRemoveFile}
+                    onSuccess={handleProcessedFile}
+                    onError={handleFailedFile}
+                  />
+                  {index !== list.length - 1 && <div className="h-5 w-full stripped-bg border-t border-b" />}
+                </Fragment>
+              ))}
+              <div className="h-5 w-full stripped-bg border-t border-b" />
+            </div>
+          )}
 
-        {failedFiles.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <span>Failed</span>
-            {failedFiles.map((file) => (
-              <DbFileCard
-                {...file}
-                key={file.id}
-                store="transcode"
-                onRemove={handleRemoveFile}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+          {processedFiles.length > 0 && (
+            <div className="flex flex-col">
+              <span className="p-4">Processed</span>
+              <div className="h-5 w-full stripped-bg border-t border-b" />
+              {processedFiles.map((file, index, list) => (
+                <Fragment key={`${file.id}-processed`}>
+                  <DbFileCard
+                    {...file}
+                    processed
+                    store="transcode"
+                    onRemove={handleRemoveFile}
+                  />
+                  {index !== list.length - 1 && <div className="h-5 w-full stripped-bg border-t border-b" />}
+                </Fragment>
+              ))}
+              <div className="h-5 w-full stripped-bg border-t border-b" />
+            </div>
+          )}
+
+          {failedFiles.length > 0 && (
+            <div className="flex flex-col">
+              <span className="p-4">Failed</span>
+              <div className="h-5 w-full stripped-bg border-t border-b" />
+              {failedFiles.map((file, index, list) => (
+                <Fragment key={file.id}>
+                  <DbFileCard
+                    {...file}
+                    store="transcode"
+                    onRemove={handleRemoveFile}
+                  />
+                  {index !== list.length - 1 && <div className="h-5 w-full stripped-bg border-t border-b" />}
+                </Fragment>
+              ))}
+              <div className="h-5 w-full stripped-bg border-t border-b" />
+            </div>
+          )}
+        </div>
+      ) : null}
     </section>
   );
 }

@@ -167,6 +167,7 @@ export default function Editor(props: Props) {
   // Timeline and segment marking UI to be implemented
   const meta = metadata ?? file?.metadata ?? null;
   const duration = meta?.duration ? Number(meta.duration) : 0;
+  const currentResolution = meta?.resolution;
 
   const resolveFormat = (fileName: string) => {
     const parts = fileName.split('.');
@@ -553,9 +554,18 @@ export default function Editor(props: Props) {
         </div>
       }
     >
-      <div className="flex flex-col gap-4 border-t pt-4">
+      <div className="flex flex-col border">
         {/* Uploaded File Info */}
-        <span className="tex-sm">{file.file_name}</span>
+        <div className="flex flex-col gap-1 p-4">
+          <span>{fileName}</span>
+          <span className="text-xs text-muted-foreground">
+            Current resolution: {currentResolution!.width}x{currentResolution!.height}
+            {meta?.duration ? ` | Duration: ${Number(meta.duration).toFixed(2)}s` : ''}
+            {meta?.size ? ` | Size: ${(meta.size / 1024 / 1024).toFixed(2)}MB` : ''}
+          </span>
+        </div>
+
+        <div className="h-5 w-full stripped-bg border-t border-b mb-4" />
 
         <DynamicDashVideoPlayer
           controls
@@ -568,7 +578,7 @@ export default function Editor(props: Props) {
         />
 
         {/* Timeline for Segment Selection */}
-        <div className="px-4">
+        <div className="p-4">
           <div className="relative overflow-hidden">
             <div
               ref={timelineRef}

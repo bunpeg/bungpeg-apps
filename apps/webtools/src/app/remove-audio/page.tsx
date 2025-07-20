@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button, Loader, RenderIf, toast } from '@bunpeg/ui';
 import { ArrowLeftIcon, CpuIcon } from 'lucide-react';
@@ -149,81 +149,102 @@ export default function RemoveAudioPage() {
           multiple
         />
       </RenderIf>
-      <div className="flex flex-col gap-8">
-        {localFiles.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <span>Uploading...</span>
-            {localFiles.map(({ id: localId, file }) => (
-              <UploadFileCard
-                key={localId}
-                file={file}
-                store="remove-audio"
-                onSuccess={(fileId) => handleUploadFile(localId, fileId, file.name)}
-              />
-            ))}
-          </div>
-        )}
 
-        {pendingFiles.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <span>Uploaded</span>
-            {pendingFiles.map((file) => (
-              <DbFileCard
-                {...file}
-                key={file.id}
-                store="remove-audio"
-                onRemove={handleRemoveFile}
-              />
-            ))}
-          </div>
-        )}
+      {hasFiles ? (
+        <div className="flex flex-col border-t border-l border-r">
+          {localFiles.length > 0 && (
+            <div className="flex flex-col">
+              <span className="p-4">Uploading...</span>
+              <div className="h-5 w-full stripped-bg border-t border-b" />
+              {localFiles.map(({ id: localId, file }, index, list) => (
+                <Fragment key={localId}>
+                  <UploadFileCard
+                    file={file}
+                    store="remove-audio"
+                    onSuccess={(fileId) => handleUploadFile(localId, fileId, file.name)}
+                  />
+                  {index !== list.length - 1 && <div className="h-5 w-full stripped-bg border-t border-b" />}
+                </Fragment>
+              ))}
+              <div className="h-5 w-full stripped-bg border-t border-b" />
+            </div>
+          )}
 
-        {processingFiles.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <span>Processing</span>
-            {processingFiles.map((file) => (
-              <DbFileCard
-                {...file}
-                processing
-                key={file.id}
-                store="remove-audio"
-                onRemove={handleRemoveFile}
-                onSuccess={handleProcessedFile}
-                onError={handleFailedFile}
-              />
-            ))}
-          </div>
-        )}
+          {pendingFiles.length > 0 && (
+            <div className="flex flex-col">
+              <span className="p-4">Uploaded</span>
+              <div className="h-5 w-full stripped-bg border-t border-b" />
+              {pendingFiles.map((file, index, list) => (
+                <Fragment key={file.id}>
+                  <DbFileCard
+                    {...file}
+                    store="remove-audio"
+                    onRemove={handleRemoveFile}
+                  />
+                  {index !== list.length - 1 && <div className="h-5 w-full stripped-bg border-t border-b" />}
+                </Fragment>
+              ))}
+              <div className="h-5 w-full stripped-bg border-t border-b" />
+            </div>
+          )}
 
-        {processedFiles.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <span>Processed</span>
-            {processedFiles.map((file) => (
-              <DbFileCard
-                {...file}
-                processed
-                key={`${file.id}-processed`}
-                store="remove-audio"
-                onRemove={handleRemoveFile}
-              />
-            ))}
-          </div>
-        )}
+          {processingFiles.length > 0 && (
+            <div className="flex flex-col">
+              <span className="p-4">Processing</span>
+              <div className="h-5 w-full stripped-bg border-t border-b" />
+              {processingFiles.map((file, index, list) => (
+                <Fragment key={file.id}>
+                  <DbFileCard
+                    {...file}
+                    processing
+                    store="remove-audio"
+                    onRemove={handleRemoveFile}
+                    onSuccess={handleProcessedFile}
+                    onError={handleFailedFile}
+                  />
+                  {index !== list.length - 1 && <div className="h-5 w-full stripped-bg border-t border-b" />}
+                </Fragment>
+              ))}
+              <div className="h-5 w-full stripped-bg border-t border-b" />
+            </div>
+          )}
 
-        {failedFiles.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <span>Failed</span>
-            {failedFiles.map((file) => (
-              <DbFileCard
-                {...file}
-                key={file.id}
-                store="remove-audio"
-                onRemove={handleRemoveFile}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+          {processedFiles.length > 0 && (
+            <div className="flex flex-col">
+              <span className="p-4">Processed</span>
+              <div className="h-5 w-full stripped-bg border-t border-b" />
+              {processedFiles.map((file, index, list) => (
+                <Fragment key={`${file.id}-processed`}>
+                  <DbFileCard
+                    {...file}
+                    processed
+                    store="remove-audio"
+                    onRemove={handleRemoveFile}
+                  />
+                  {index !== list.length - 1 && <div className="h-5 w-full stripped-bg border-t border-b" />}
+                </Fragment>
+              ))}
+              <div className="h-5 w-full stripped-bg border-t border-b" />
+            </div>
+          )}
+
+          {failedFiles.length > 0 && (
+            <div className="flex flex-col">
+              <span className="p-4">Failed</span>
+              <div className="h-5 w-full stripped-bg border-t border-b" />
+              {failedFiles.map((file) => (
+                <DbFileCard
+                  {...file}
+                  key={file.id}
+                  store="remove-audio"
+                  onRemove={handleRemoveFile}
+                />
+              ))}
+              <div className="h-5 w-full stripped-bg border-t border-b" />
+            </div>
+          )}
+        </div>
+      ) : null}
     </section>
   );
 }

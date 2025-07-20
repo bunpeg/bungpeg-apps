@@ -71,7 +71,7 @@ export function UploadFileCard(props: UploadFileCardProps) {
   }
 
   return (
-    <div className="border flex gap-2 p-4">
+    <div className="flex gap-2 p-4">
       <FileVideoIcon className="size-5 mt-1" />
       <div className="flex flex-col gap-1">
         <span>{file.name}</span>
@@ -230,7 +230,7 @@ export function DbFileCard(props: DbFileCardProps) {
 
   if (error) {
     return (
-      <div className="border flex gap-2 p-4">
+      <div className="flex gap-2 p-4">
         <FileVideoIcon className="size-5 mt-1" />
         <div className="flex flex-col gap-1">
           <span>{name}</span>
@@ -250,7 +250,7 @@ export function DbFileCard(props: DbFileCardProps) {
   }
 
   return (
-    <div className="border flex gap-2 p-4">
+    <div className="flex gap-2 p-4">
       <FileVideoIcon className="size-5 mt-1" />
       <div className="flex flex-col gap-1">
         <span>{file?.file_name ?? name}</span>
