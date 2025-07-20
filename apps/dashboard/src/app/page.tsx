@@ -18,9 +18,9 @@ export default async function Home() {
           </p>
 
           <div className="hidden md:flex items-center gap-2">
-            <Link href="/playground">
+            <a href="https://tools.bunpeg.io/" target="_blank" rel="noopener noreferrer">
               <Button variant="outline">Playground</Button>
-            </Link>
+            </a>
             <Link href="/docs">
               <Button variant="default">Read the docs</Button>
             </Link>
