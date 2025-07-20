@@ -6,7 +6,7 @@ import { CpuIcon, FileVideoIcon, Trash2Icon, CheckIcon } from 'lucide-react';
 import { Button, cn, Loader, toast } from '@bunpeg/ui';
 
 import { env } from '@/env';
-import { type StoredFile } from '@/types';
+import { type UserFile, type StoredFile } from '@/types';
 import { pollFileStatus } from '@/utils/api';
 import useFile from '@/utils/hooks/useFile';
 import useFileMeta from '@/utils/hooks/useFileMeta';
@@ -54,17 +54,16 @@ export default function Editor(props: Props) {
 
   const { mutate: scaleVideo, isPending: isScaling } = useMutation<string, Error, Resolution>({
     mutationFn: async (resolution) => {
-      const response = await fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/chain`, {
+      const response = await fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/resize-video`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           file_id: fileId,
-          operations: [{
-            type: 'resize-video',
-            width: resolution.width,
-            height: resolution.height,
-            output_format: resolveFormat(fileName),
-          }],
+          parent: fileId,
+          width: resolution.width,
+          height: resolution.height,
+          output_format: resolveFormat(fileName),
+          mode: 'append',
         }),
       });
 
@@ -72,14 +71,33 @@ export default function Editor(props: Props) {
         throw new Error('Unable to scale the video');
       }
 
-      const result = await response.json();
       await pollFileStatus(fileId);
 
-      return result.file_id;
+      const newFilesRes = await fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/files?parent=${fileId}`);
+      if (!newFilesRes.ok || newFilesRes.status !== 200) {
+        throw new Error('Unable to retreive the new segments');
+      }
+
+      const files = (await newFilesRes.json()).files as UserFile[];
+      if (files.length === 0) throw new Error('No files found');
+
+      const mergedFile = files.at(-1)!;
+
+      const dashRes = await fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/dash/${mergedFile.id}`)
+      if (!dashRes.ok || dashRes.status !== 200) {
+        throw new Error('Unable to generate the dash files');
+      }
+
+      const processing = !!(await dashRes.json()).success;
+      if (!processing) throw new Error('DASH processing failed');
+
+      await pollFileStatus(fileId);
+
+      return mergedFile.id;
     },
     onSuccess: (newFileId) => {
       appendFile('scale', newFileId, fileName);
-      markFileAsProcessed('scale', fileId);
+      markFileAsProcessed('scale', newFileId);
       onProcessed(newFileId);
     },
     onError: (error) => {
@@ -284,19 +302,7 @@ export default function Editor(props: Props) {
   );
 }
 
-// Helper function to resolve output format based on filename
 function resolveFormat(fileName: string): string {
   const extension = fileName.split('.').pop()?.toLowerCase();
-  switch (extension) {
-    case 'mov':
-      return 'mov';
-    case 'avi':
-      return 'avi';
-    case 'mkv':
-      return 'mkv';
-    case 'webm':
-      return 'webm';
-    default:
-      return 'mp4';
-  }
+  return extension || 'mp4';
 }

@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { tryCatch } from '@bunpeg/helpers';
 import { Button, Loader, RenderIf, toast } from '@bunpeg/ui';
 import { FileVideoIcon, Trash2Icon } from 'lucide-react';
 
@@ -32,27 +31,25 @@ export default function Uploader(props: Props) {
     mutationFn: async (file) => {
       const formData = new FormData();
       formData.append('file', file);
-      const { data: uploadRes, error: reqError } = await tryCatch(
-        fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/upload`, {
-          method: 'POST',
-          body: formData,
-        }),
-      );
+      const uploadRes = await fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
 
-      if (reqError) throw reqError;
+      if (!uploadRes.ok || uploadRes.status !== 200) {
+        throw new Error('Unable to upload the file');
+      }
 
       const fileId = (await uploadRes.json()).fileId as string;
       setLocalFileId(fileId);
 
-      const { data: dashRes, error: dashErr } = await tryCatch(fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/dash/${fileId}`));
-
-      if (dashErr) throw dashErr;
+      const dashRes = await fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/dash/${fileId}`)
+      if (!dashRes.ok || dashRes.status !== 200) {
+        throw new Error('Unable to generate the dash files');
+      }
 
       const processing = !!(await dashRes.json()).success;
-
-      if (!processing) {
-        throw new Error('DASH processing failed');
-      }
+      if (!processing) throw new Error('DASH processing failed');
 
       await pollFileStatus(fileId);
 

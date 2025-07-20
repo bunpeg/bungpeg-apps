@@ -100,9 +100,9 @@ export default function Preview(props: Props) {
         </div>
       }
     >
-      <div className="flex flex-col gap-4 border-t pt-4">
+      <div className="flex flex-col border">
         {/* Uploaded File Info */}
-        <div className="flex flex-col">
+        <div className="flex flex-col p-4">
           <span className="tex-sm">{file.file_name}</span>
           <span className="text-sm text-gray-500">
             ID: {file.id}
@@ -117,6 +117,8 @@ export default function Preview(props: Props) {
             ) : null}
           </span>
         </div>
+
+        <div className="h-5 w-full stripped-bg border-t border-b" />
 
         <DynamicDashVideoPlayer controls src={buildCdnUrl(fileId)} className="max-h-[calc(100vh_-_200px)]" />
       </div>
