@@ -23,7 +23,7 @@ import useFileMeta from '@/utils/hooks/useFileMeta';
 
 import Wrapper from './wrapper';
 
-const DynamicDashVideoPlayer = dynamic(() => import('./dash-player'), { ssr: false });
+const DynamicDashVideoPlayer = dynamic(() => import('../../components/dash-player'), { ssr: false });
 
 interface Props {
   file: StoredFile;

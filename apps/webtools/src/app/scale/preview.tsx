@@ -73,6 +73,7 @@ export default function Preview(props: Props) {
 
   const meta = metadata ?? file?.metadata ?? null;
   const duration = meta?.duration ? Number(meta.duration) : 0;
+  const resolution = meta?.resolution;
 
   return (
     <Wrapper
@@ -84,7 +85,7 @@ export default function Preview(props: Props) {
           >
             <Button variant="outline">
               <CloudDownloadIcon className="size-4 mr-2" />
-              Dowload
+              Download
             </Button>
           </a>
           <Button
@@ -109,6 +110,9 @@ export default function Preview(props: Props) {
               <>
                 | size: {(meta.size / 1024 / 1024).toFixed(2)}MB |
                 duration: {duration.toFixed(2)}s
+                {resolution?.width && resolution?.height ? (
+                  <> | resolution: {resolution.width}x{resolution.height}</>
+                ) : null}
               </>
             ) : null}
           </span>

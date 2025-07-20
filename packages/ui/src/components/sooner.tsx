@@ -43,7 +43,7 @@ function toast(title: ReactNode, extras: Omit<ToastProps, 'id' | 'title'> = {}) 
   return sonnerToast.custom((id) => <Toast id={id} title={title} {...extras} />, { duration: extras?.duration });
 }
 
-toast.error = (title: ReactNode, extras: Omit<ToastProps, 'id' | 'title'>) => {
+toast.error = (title: ReactNode, extras: Omit<ToastProps, 'id' | 'title'> = {}) => {
   return sonnerToast.custom((id) => <Toast id={id} title={title} {...extras} destructive />, { duration: extras?.duration });
 };
 
