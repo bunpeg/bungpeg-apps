@@ -60,7 +60,7 @@ export default async function Home() {
               <SparklesIcon className="size-4" />
               <h3 className="text-sm font-medium">Docs for AI</h3>
             </div>
-            <p className="text-sm">You can download and feed our docs to our AI of choice.</p>
+            <p className="text-sm">You can download and feed our docs to your AI of choice.</p>
           </div>
 
           <div className="space-y-2 border relative">
