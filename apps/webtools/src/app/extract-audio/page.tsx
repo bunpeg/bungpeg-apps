@@ -2,7 +2,7 @@
 
 import { Fragment, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Button, Loader, RenderIf, Separator, toast } from '@bunpeg/ui';
+import { Button, Loader, RenderIf, toast } from '@bunpeg/ui';
 import { ArrowLeftIcon, CpuIcon } from 'lucide-react';
 import { append, applyWhere, remove, tryCatch } from '@bunpeg/helpers';
 import { nanoid } from 'nanoid';

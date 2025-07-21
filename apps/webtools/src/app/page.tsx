@@ -30,7 +30,7 @@ export default async function Home() {
             <Toolbox link="/transcode" title="Change formats" description="Transcode video files to other formats" icon={<Settings2Icon className="size-4" />} />
             <Toolbox link="/extract-audio" title="Extract audio" description="Extract the audio track from video files" icon={<FileAudioIcon className="size-4" />} />
             <Toolbox link="/remove-audio" title="Remove audio" description="Remove the audio track from video files" icon={<VolumeOffIcon className="size-4" />} />
-            <Toolbox title="Extract thumbnail" description="Select and extract any frame as thumbnail" icon={<ImagePlusIcon className="size-4" />} comingSoon />
+            <Toolbox link="/extract-thumbnail" title="Extract thumbnail" description="Select and extract any frame as thumbnail" icon={<ImagePlusIcon className="size-4" />} />
           </div>
         </ViewSizeGuard>
 

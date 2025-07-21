@@ -17,7 +17,7 @@ export type VideoMeta = {
   };
 };
 
-export type FileStore = 'extract-audio' | 'remove-audio' | 'trim' | 'scale' | 'transcode';
+export type FileStore = 'extract-audio' | 'remove-audio' | 'trim' | 'scale' | 'transcode' | 'extract-thumbnail';
 
 export interface StoredFile {
   id: string;
