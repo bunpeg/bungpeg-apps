@@ -24,7 +24,7 @@ export default async function Home() {
         </div>
 
         <ViewSizeGuard>
-          <div data-el="tools" className="relative mx-auto grid gap-4 md:gap-1 max-w-4xl sm:grid-cols-2 lg:grid-cols-3">
+          <div data-el="tools" className="relative mx-auto stripped-bg border p-4 grid gap-4 md:gap-4 max-w-4xl sm:grid-cols-2 lg:grid-cols-3">
             <Toolbox link="/trim" title="Trim" description="Trim video files lengths" icon={<ScissorsLineDashedIcon className="size-4" />} />
             <Toolbox link="/scale" title="Scale" description="Change the scale & aspect ration of video files" icon={<ExpandIcon className="size-4" />} />
             <Toolbox link="/transcode" title="Change formats" description="Transcode video files to other formats" icon={<Settings2Icon className="size-4" />} />
@@ -63,7 +63,7 @@ interface ToolboxProps {
 function Toolbox(props: ToolboxProps) {
   const { icon, description, link, title, comingSoon } = props;
   return (
-    <Link href={link ?? '/'} className="space-y-2 p-12 border relative cursor-pointer transition-colors ease-linear hover:border-primary dark:hover:bg-neutral-50/10 dark:hover:border-primary">
+    <Link href={link ?? '/'} className="bg-background space-y-2 p-12 border relative cursor-pointer transition-colors ease-linear hover:border-primary dark:hover:border-primary">
       <div className="flex items-center gap-2">
         {icon}
         <h3 className="text-sm font-medium">{title}</h3>
