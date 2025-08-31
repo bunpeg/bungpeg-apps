@@ -13,12 +13,13 @@ Content-Type: application/json
   "fileId": "string",
   "width": number,
   "height": number,
-  "outputFormat": "mp4" | "mkv" | "webm" | "mov" | "avi"
+  "outputFormat": "mp4" | "mkv" | "webm" | "mov" | "avi",
+  "mode": "replace" | "append"
 }
 ```
 
 ### Technical Details:
-- Swaps the files
+- Mode defaults to `replace`
 - Uses FFmpeg's scale filter
 - Maintains aspect ratio
 - Output is encoded with libx264 codec

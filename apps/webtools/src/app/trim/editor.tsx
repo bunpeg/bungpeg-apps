@@ -110,7 +110,7 @@ export default function Editor(props: Props) {
       if (files.length === 0) throw new Error('No files found');
 
       if (files.length === 1) {
-        mergedFile = files.at(-1);
+        mergedFile = files[0];
       } else {
         const mergeRes = await fetch(`${env.NEXT_PUBLIC_BUNPEG_API}/merge`, {
           method: 'POST',

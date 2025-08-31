@@ -15,7 +15,7 @@ You can also chain operations by using the `/chain` endpoint.
 ### Metadata
 Regarding file metadata, it currently gets generated asynchronously after upload, so if you need it right after
 you have two options, you can poll the `/files/{file_id}` endpoint or call the `/meta/{file_id}` and get it directly.
-The `/meta/{file_id}` will not store it in DB though.
+The `/meta/{file_id}` will not store it in DB though. You can also call a `/probe/{file_id}` endpoint to get a lot more information from the file, it is a lot slower too.
 
 ### How files are processed
 Each operation is stored in DB as a task, and tasks are acted on sequentially. If a task for a file fails,

@@ -12,12 +12,13 @@ Content-Type: application/json
 {
   "fileId": "string",
   "duration": number, // time lapse to remove
-  "outputFormat": "mp4" | "mkv" | "webm" | "mov" | "avi"
+  "outputFormat": "mp4" | "mkv" | "webm" | "mov" | "avi",
+  "mode": "replace" | "append"
 }
 ```
 
 ### Technical Details:
-- Swaps the files
+- Mode defaults to `replace`
 - Automatically calculates total duration
 - Uses FFmpeg's copy codec
 - Throws error if resulting video would be empty

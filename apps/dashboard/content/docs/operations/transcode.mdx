@@ -10,11 +10,19 @@ Content-Type: application/json
 
 {
   "fileId": "string",
-  "format": "mp4" | "mkv" | "webm" | "mov" | "avi"
+  "format": "mp4" | "mkv" | "webm" | "mov" | "avi",
+  "video_codec": "h264" | "hevc" | "vp9" | "av1",
+  "audio_codec": "aac" | "mp3" | "ac3" | "opus" | "flac",
+  "preset": "string",
+  "crf": "string",
+  "audio_bitrate": "string",
+  "parent_id": "string",
+  "mode": "replace" | "append"
 }
 ```
 
 ### Technical Details:
-- Swaps the files
-- Uses FFmpeg's copy codec for faster transcoding
+- Mode defaults to `replace`
+- Only `file_id` and `format` are required
+- Uses FFmpeg's copy codec by default for faster transcoding
 - Preserves original video and audio quality

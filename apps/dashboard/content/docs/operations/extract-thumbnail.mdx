@@ -11,12 +11,13 @@ Content-Type: application/json
 {
   "fileId": "string",
   "timestamp": "string",
-  "imageFormat": "jpg" | "jpeg" | "png" | "webp" | "gif" | "avif" | "svg"
+  "imageFormat": "jpg" | "jpeg" | "png" | "webp" | "gif" | "avif" | "svg",
+  "mode": "replace" | "append"
 }
 ```
 
 ### Technical Details:
-- Generates a new file
+- Mode defaults to `append`
 - Uses FFmpeg's `-vframes 1` for single frame extraction
 - High quality setting with `-q:v 2`
 - Supports multiple image formats

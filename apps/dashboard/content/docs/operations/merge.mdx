@@ -10,13 +10,14 @@ Content-Type: application/json
 
 {
   "fileIds": ["string", "string"],
-  "outputFormat": "string"
+  "outputFormat": "string",
+  "mode": "replace" | "append"
 }
 ```
 
 ### Technical Details:
 - Uses the first file (`fileIds[0]`) as the base, and swaps it with the results
-- Haven't tested it properly so I don't know what happens if some of the files are audio
+- Mode defaults to `append`
 - Automatically detects and matches resolution
 - Preserves aspect ratio with padding
 - Uses complex filter chain for proper concatenation

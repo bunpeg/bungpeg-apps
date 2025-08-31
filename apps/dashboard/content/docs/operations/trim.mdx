@@ -12,12 +12,13 @@ Content-Type: application/json
   "fileId": "string",
   "start": number,
   "duration": number,
-  "outputFormat": "mp4" | "mkv" | "webm" | "mov" | "avi"
+  "outputFormat": "mp4" | "mkv" | "webm" | "mov" | "avi",
+  "mode": "replace" | "append"
 }
 ```
 
 ### Technical Details:
-- Swaps the files
+- Mode defaults to `replace`
 - Uses FFmpeg's copy codec for fast trimming
 - Precise frame-accurate trimming
 - Preserves original quality

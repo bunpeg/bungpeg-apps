@@ -11,12 +11,12 @@ Content-Type: application/json
 {
   "videoFileId": "string",
   "audioFileId": "string",
-  "outputFormat": "mp4" | "mkv" | "webm" | "mov" | "avi"
+  "outputFormat": "mp4" | "mkv" | "webm" | "mov" | "avi",
+  "mode": "replace" | "append"
 }
 ```
 
 ### Technical Details:
-- Swaps the video file
 - Smart codec selection based on output format:
   - MP4/MOV: AAC (192kbps) or copy if compatible
   - WebM: Opus (128kbps) or copy if compatible

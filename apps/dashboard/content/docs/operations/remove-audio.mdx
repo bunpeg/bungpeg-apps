@@ -10,12 +10,13 @@ Content-Type: application/json
 
 {
   "fileId": "string",
-  "outputFormat": "mp4" | "mkv" | "webm" | "mov" | "avi"
+  "outputFormat": "mp4" | "mkv" | "webm" | "mov" | "avi",
+  "mode": "replace" | "append"
 }
 ```
 
 ### Technical Details:
-- Swaps the files
+- Mode defaults to `replace`
 - Uses FFmpeg's `-an` flag to strip audio
 - Preserves video quality
 - Fast operation as it only removes audio stream
